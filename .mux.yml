@@ -1,0 +1,6 @@
+name: FUNCTIONAL/leihs-azure-ad-sync
+windows:
+  2:
+    name: run
+    command: |
+      ./bin/clj-run -c config.yml run
