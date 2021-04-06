@@ -1,0 +1,13 @@
+- name: 'create user {{app_user}}'
+  user:
+    name: '{{app_user}}'
+    system: yes
+
+- name: 'create directory {{app_dir}}'
+  file:
+    path: '{{app_dir}}'
+    state: directory
+    owner: '{{app_user}}'
+    recurse: yes
+
+

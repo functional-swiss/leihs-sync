@@ -1,46 +1,48 @@
 {:paths ["src" "resources"]
  :deps
  {;
-  camel-snake-kebab {:mvn/version "0.4.1"}
+  camel-snake-kebab {:mvn/version "0.4.2"}
   cheshire/cheshire {:mvn/version "5.10.0"}
-  clj-commons/clj-yaml {:mvn/version "0.7.1"}
-  clj-http/clj-http {:mvn/version "3.11.0"}
-  com.fzakaria/slf4j-timbre {:mvn/version "0.3.20"}
-  com.taoensso/timbre {:mvn/version "4.10.0"}
+  clj-commons/clj-yaml {:mvn/version "0.7.106"}
+  clj-http/clj-http {:mvn/version "3.12.1"}
+  com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
+  com.taoensso/timbre {:mvn/version "5.1.2"}
   crypto-random {:mvn/version "1.2.1"}
-  digest {:mvn/version "1.4.9"}
+  digest {:mvn/version "1.4.10"}
   environ {:mvn/version "1.2.0"}
-  honeysql {:mvn/version "1.0.444"}
-  http-kit {:mvn/version "2.4.0-alpha6"}
+  honeysql {:mvn/version "1.0.461"}
+  http-kit {:mvn/version "2.5.3"}
   inflections {:mvn/version "0.13.2"}
   logbug {:mvn/version "5.0.0"}
-  nrepl/nrepl {:mvn/version "0.7.0"}
+  nrepl/nrepl {:mvn/version "0.8.3"}
   org.clojure/core.memoize {:mvn/version "1.0.236"}
   org.clojure/data.codec {:mvn/version "0.1.1"}
-  org.clojure/tools.cli {; :multi option is not yet released
-                         ; :mvn/version "1.0.194"
-                         :git/url "https://github.com/clojure/tools.cli"
-                         :sha "2a779bfb3be4b5050b34040c66ab7f8685937f2e"}
+  org.clojure/tools.cli {:mvn/version "1.0.206"}
   org.clojure/tools.logging {:mvn/version "1.1.0"}
   ring-middleware-accept {:mvn/version "2.0.3"}
-  ring/ring-codec {:mvn/version "1.1.2"}
-  ring/ring-core {:mvn/version "1.8.1"}
+  ring/ring-codec {:mvn/version "1.1.3"}
+  ring/ring-core {:mvn/version "1.9.1"}
   }
  :aliases
  {;
-  :depstar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}}
+  :depstar {:extra-deps {seancorfield/depstar {:mvn/version "2.0.193"}}
+
+            }
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+            :exec-fn hf.depstar/uberjar
+            :exec-args {:aot true}}
   :graph {:extra-deps
           {org.clojure/tools.deps.graph
            {;:local/root "/Users/thomas/Programming/CLOJURE/tools.deps.graph"
             :git/url  "https://github.com/DrTom/tools.deps.graph.git"
             :sha "809d5981b6c6ec7267328b74f8dd61630df01daf" }}
           :main-opts ["-m" "clojure.tools.deps.graph"]}
-  :nREPL {:extra-deps {nrepl/nrepl {:mvn/version "0.7.0"}}}
-  :outdated {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
+  :nREPL {:extra-deps {nrepl/nrepl {:mvn/version "0.8.3"}}}
+  :outdated {:extra-deps {olical/depot {:mvn/version "2.1.0"}}
              :main-opts ["-m" "depot.outdated.main"]}
   :resources {:extra-paths ["resources"]}
   :test {:extra-paths ["test"]
          :extra-deps {com.cognitect/test-runner
                       {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                       :sha "209b64504cb3bd3b99ecfec7937b358a879f55c1"}}
+                       :sha "b6b3193fcc42659d7e46ecd1884a228993441182"}}
          :main-opts ["-m" "cognitect.test-runner"]}}}

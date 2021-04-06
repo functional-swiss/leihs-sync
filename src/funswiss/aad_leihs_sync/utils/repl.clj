@@ -1,12 +1,12 @@
-(ns funswiss.leihs-ms-connect.utils.repl
+(ns funswiss.aad-leihs-sync.utils.repl
   (:refer-clojure :exclude [str keyword])
   (:require
     [clj-yaml.core :as yaml]
     [clojure.java.io :as io]
     [clojure.tools.logging :as logging]
     [environ.core :refer [env]]
-    [funswiss.leihs-ms-connect.utils.cli-options :refer [long-opt-for-key]]
-    [funswiss.leihs-ms-connect.utils.core :refer [keyword presence str]]
+    [funswiss.aad-leihs-sync.utils.cli-options :refer [long-opt-for-key]]
+    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str]]
     [nrepl.server :as nrepl :refer [start-server stop-server]]))
 
 

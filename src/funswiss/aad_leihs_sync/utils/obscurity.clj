@@ -1,10 +1,10 @@
-(ns funswiss.leihs-ms-connect.utils.obscurity
+(ns funswiss.aad-leihs-sync.utils.obscurity
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.string :as string]
     [clojure.tools.logging :as logging]
     [crypto.random :as cr]
-    [funswiss.leihs-ms-connect.utils.core :refer [keyword presence str]]
+    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str]]
     [taoensso.timbre :as timbre :refer [debug info]]
     )
   (:import java.util.Base64)

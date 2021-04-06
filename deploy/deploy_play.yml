@@ -1,0 +1,17 @@
+- hosts: all
+  gather_facts: False
+  pre_tasks:
+    - name: cleanup ansible remote tmp dir
+      raw: "rm -rf ~/.ansible/tmp"
+    - name: install system python
+      raw: |
+        apt -y update
+        if [ $(lsb_release -c -s) = 'focal' ]; then
+          apt install -y python3 python-is-python3
+        else
+          apt install -y python
+        fi
+
+- hosts: all
+  roles:
+    - role: deploy

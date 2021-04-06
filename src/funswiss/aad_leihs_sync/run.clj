@@ -1,4 +1,4 @@
-(ns funswiss.leihs-ms-connect.run
+(ns funswiss.aad-leihs-sync.run
   (:refer-clojure :exclude [str keyword encode decode])
   (:require
     [clj-yaml.core :as yaml]
@@ -7,15 +7,15 @@
     [clojure.tools.logging :as logging]
     [clojure.walk :refer [keywordize-keys stringify-keys]]
     [environ.core :refer [env]]
-    [funswiss.leihs-ms-connect.leihs.core :as leihs-core]
-    [funswiss.leihs-ms-connect.logging :as service-logging]
-    [funswiss.leihs-ms-connect.ms.auth :as ms-auth]
-    [funswiss.leihs-ms-connect.ms.core :as ms-core]
-    [funswiss.leihs-ms-connect.sync.core :as sync]
-    [funswiss.leihs-ms-connect.utils.cli-options :as cli-opts :refer [long-opt-for-key]]
-    [funswiss.leihs-ms-connect.utils.core :refer [keyword str presence deep-merge]]
-    [funswiss.leihs-ms-connect.utils.obscurity :as obscurity]
-    [funswiss.leihs-ms-connect.utils.repl :as repl]
+    [funswiss.aad-leihs-sync.leihs.core :as leihs-core]
+    [funswiss.aad-leihs-sync.logging :as service-logging]
+    [funswiss.aad-leihs-sync.ms.auth :as ms-auth]
+    [funswiss.aad-leihs-sync.ms.core :as ms-core]
+    [funswiss.aad-leihs-sync.sync.core :as sync-core]
+    [funswiss.aad-leihs-sync.utils.cli-options :as cli-opts :refer [long-opt-for-key]]
+    [funswiss.aad-leihs-sync.utils.core :refer [keyword str presence deep-merge]]
+    [funswiss.aad-leihs-sync.utils.obscurity :as obscurity]
+    [funswiss.aad-leihs-sync.utils.repl :as repl]
     [taoensso.timbre :as timbre :refer [debug info]]))
 
 
@@ -30,6 +30,8 @@
 (def group-attribute-mapping-default {:id :org_id
                                       :description :description
                                       :displayName :name})
+
+
 
 (defn options-specs []
   (concat
@@ -48,6 +50,7 @@
       :parse-fn yaml/parse-string]
      [nil "--config-write FILE"
       "Write the current configuration to a file and exit."]]
+    (sync-core/options-specs)
     (ms-auth/options-specs)
     (ms-core/options-specs)
     (leihs-core/option-specs)
@@ -55,9 +58,9 @@
     repl/cli-options))
 
 (defn main-usage [options-summary & more]
-  (->> ["leihs-ms-connect run"
+  (->> ["add-leihs-sync run"
         ""
-        "usage: leihs-ms-connect [<opts>] run [<run-opts>] [<args>]"
+        "usage: add-leihs-sync [<opts>] run [<run-opts>] [<args>]"
         ""
         "Arguments to options can also be given through environment variables or java system properties."
         "Boolean arguments are parsed as YAML i.e. yes, no, true or false strings are interpreted. "
@@ -110,7 +113,7 @@
                 (service-logging/init @config*)
                 (.addShutdownHook (Runtime/getRuntime) (Thread. #(shutdown)))
                 (repl/init @config*)
-                (sync/start @config*)))))
+                (sync-core/start @config*)))))
 
 ;;; development ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -1,0 +1,15 @@
+- name: create uberjar
+  delegate_to: localhost
+  args:
+    executable: /bin/bash
+  shell: |
+    #!/usr/bin/env bash
+    set -euxo
+    cd {{playbook_dir}}/..
+    ./bin/clj-uberjar
+
+- name: copy uberjar
+  copy:
+    src: '{{playbook_dir}}/../tmp/sync.jar'
+    dest: '{{app_dir}}/sync.jar'
+    owner: '{{app_user}}'

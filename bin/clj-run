@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 set -euo
-clj -m funswiss.leihs-ms-connect.main "$@"
+clj -m funswiss.aad-leihs-sync.main "$@"

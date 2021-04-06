@@ -1,4 +1,4 @@
-(ns funswiss.leihs-ms-connect.sync.photo
+(ns funswiss.aad-leihs-sync.sync.photo
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.io :as io]
@@ -6,8 +6,8 @@
     [clojure.pprint :refer [pprint]]
     [clojure.set :as set]
     [clojure.tools.logging :as logging]
-    [funswiss.leihs-ms-connect.ms.core :as ms]
-    [funswiss.leihs-ms-connect.utils.core :refer [keyword presence str get!]]
+    [funswiss.aad-leihs-sync.ms.core :as ms]
+    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str get!]]
     [logbug.catcher]
     [taoensso.timbre :as timbre :refer [debug info]]
     )

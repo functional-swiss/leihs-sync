@@ -1,4 +1,4 @@
-(ns funswiss.leihs-ms-connect.utils.core
+(ns funswiss.aad-leihs-sync.utils.core
   (:refer-clojure :exclude [str keyword]))
 
 (defn str

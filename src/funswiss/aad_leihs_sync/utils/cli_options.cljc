@@ -1,4 +1,4 @@
-(ns funswiss.leihs-ms-connect.utils.cli-options
+(ns funswiss.aad-leihs-sync.utils.cli-options
   (:refer-clojure :exclude [str keyword encode decode])
   (:require
     [camel-snake-kebab.core :refer [->snake_case]]
@@ -6,7 +6,7 @@
     [clojure.string :refer [upper-case]]
     [clojure.tools.cli :as cli]
     [environ.core :refer [env]]
-    [funswiss.leihs-ms-connect.utils.core :refer [keyword str presence deep-merge]]
+    [funswiss.aad-leihs-sync.utils.core :refer [keyword str presence deep-merge]]
     [taoensso.timbre :as timbre :refer [debug info]]
     ))
 

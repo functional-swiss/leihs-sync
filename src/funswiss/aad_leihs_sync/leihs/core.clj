@@ -1,4 +1,4 @@
-(ns funswiss.leihs-ms-connect.leihs.core
+(ns funswiss.aad-leihs-sync.leihs.core
   (:refer-clojure :exclude [str keyword])
   (:require
     [cheshire.core :as cheshire]
@@ -6,14 +6,14 @@
     [clj-yaml.core :as yaml]
     [clojure.set :as set]
     [clojure.string :as string]
-    [clojure.tools.logging :as logging]
+    ;[clojure.tools.logging :as logging]
     [clojure.walk :refer [keywordize-keys stringify-keys]]
-    [funswiss.leihs-ms-connect.ms.auth :as ms-auth]
-    [funswiss.leihs-ms-connect.utils.cli-options :as cli-opts]
-    [funswiss.leihs-ms-connect.utils.core :refer [keyword presence str get!]]
-    [funswiss.leihs-ms-connect.utils.obscurity :as obscurity]
+    [funswiss.aad-leihs-sync.ms.auth :as ms-auth]
+    [funswiss.aad-leihs-sync.utils.cli-options :as cli-opts]
+    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str get!]]
+    [funswiss.aad-leihs-sync.utils.obscurity :as obscurity]
     [logbug.catcher]
-    [taoensso.timbre :as timbre :refer [debug info spy]]
+    [taoensso.timbre :as logging :refer [debug info spy]]
     ))
 
 (def leihs-base-url-key :leihs-base-url)
@@ -21,10 +21,29 @@
 (def leihs-organization-key :leihs-organization)
 ;(defn option-specs [] [{:key :leihs-base-url} ])
 
+(def leihs-user-defaults-key :leihs-user-defaults)
+(def leihs-user-disable-properties-key :leihs-user-disable-properties)
+
 (defn option-specs []
   (->>
     [{:key leihs-base-url-key}
-     {:key :leihs-user-defaults}
+     {:key leihs-user-defaults-key}
+     {:key leihs-user-disable-properties-key
+      :default {:account_enabled false
+                :address nil
+                :badge_id nil
+                :city nil
+                :country nil
+                :email nil
+                :extended_info nil
+                :firstname nil
+                :img_digest nil
+                :lastname nil
+                :login nil
+                :phone nil
+                :secondary_email nil
+                :url nil
+                :zip nil }}
      {:key :leihs-group-defaults}
      {:key leihs-organization-key}
      {:key leihs-token-key
@@ -37,14 +56,19 @@
 (defn users-fields [config]
   (set/union
     #{:id
-      :organization
+      :account_disabled_at
+      :account_enabled
       :img_digest
+      :last_sign_in_at
+      :organization
       :org_id}
     (->> (get! config :user-attribute-mapping)
          vals
          (map keyword)
          set)
-    (->> (get config :leihs-user-defaults {})
+    (->> (get! config leihs-user-defaults-key)
+         keys set)
+    (->> (get! config leihs-user-disable-properties-key)
          keys set)))
 
 (def write-allowed-user-keys
@@ -135,6 +159,13 @@
                      cheshire/generate-string)})
         :body)))
 
+(defn delete-user [config id]
+  (let [base-url (get! config leihs-base-url-key)
+        enc-token (get! config leihs-token-key)]
+    (-> (str base-url "/admin/users/" id)
+        (http-client/delete
+          {:accept :json
+           :basic-auth [(obscurity/decrypt enc-token) ""]}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

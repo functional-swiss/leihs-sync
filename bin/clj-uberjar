@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euxo
+
+PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
+DIGEST="$(git -C "$PROJECT_DIR" log -n 1 HEAD --pretty=%T)"
+
+cd ${PROJECT_DIR}
+
+clojure -X:uberjar \
+  :exec-fn 'hf.depstar/uberjar' :aot true :jar "\"tmp/sync.jar\"" \
+  :main-class funswiss.aad-leihs-sync.main
+

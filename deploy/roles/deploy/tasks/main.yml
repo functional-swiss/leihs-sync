@@ -1,0 +1,29 @@
+- include_tasks:
+    file: install.yml
+    apply:
+      tags: install
+  tags: install
+
+- include_tasks:
+    file: project.yml
+    apply:
+      tags: project
+  tags: project
+
+- include_tasks:
+    file: uberjar.yml
+    apply:
+      tags: uberjar
+  tags: uberjar
+
+- include_tasks:
+    file: config.yml
+    apply:
+      tags: config
+  tags: config
+
+- include_tasks:
+    file: service.yml
+    apply:
+      tags: service
+  tags: service

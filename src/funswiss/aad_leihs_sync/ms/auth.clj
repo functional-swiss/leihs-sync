@@ -1,12 +1,12 @@
-(ns funswiss.leihs-ms-connect.ms.auth
+(ns funswiss.aad-leihs-sync.ms.auth
   (:refer-clojure :exclude [str keyword])
   (:require
     [clj-http.client :as http-client]
     [clojure.core.memoize :as memoize]
     [clojure.tools.logging :as logging]
-    [funswiss.leihs-ms-connect.utils.cli-options :as cli-opts]
-    [funswiss.leihs-ms-connect.utils.core :refer [keyword presence str]]
-    [funswiss.leihs-ms-connect.utils.obscurity :as obscurity]
+    [funswiss.aad-leihs-sync.utils.cli-options :as cli-opts]
+    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str]]
+    [funswiss.aad-leihs-sync.utils.obscurity :as obscurity]
     [taoensso.timbre :as timbre :refer [debug info]]
     ))
 

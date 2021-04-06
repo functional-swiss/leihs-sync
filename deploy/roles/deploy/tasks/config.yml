@@ -1,0 +1,8 @@
+- name: install config
+  copy:
+    src: '{{config_file}}'
+    dest: '{{app_dir}}/config.yml'
+    mode: 0600
+    owner: '{{app_user}}'
+    group: '{{app_user}}'
+

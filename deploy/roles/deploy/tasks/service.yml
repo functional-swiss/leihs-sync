@@ -1,0 +1,23 @@
+- name: copy {{app_name}}.service
+  template:
+    src: 'sync.service'
+    dest: /etc/systemd/system/{{app_name}}.service
+    mode: 0644
+
+- name: enable {{app_name}}.service
+  service:
+    name: '{{app_name}}.service'
+    daemon_reload: yes
+    enabled: yes
+
+- name: install {{app_name}} timer
+  template:
+    src: sync.timer
+    dest: /etc/systemd/system/{{app_name}}.timer
+    mode: 0644
+
+- name: enable and start the timer
+  service:
+    name: '{{app_name}}.timer'
+    enabled: yes
+    state: started

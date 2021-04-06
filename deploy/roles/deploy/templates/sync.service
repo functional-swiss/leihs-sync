@@ -1,0 +1,20 @@
+[Unit]
+Description=AAD Leihs {{leihs_sync_name}} Sync Service
+After=syslog.target
+After=network.target
+
+BindsTo=leihs-admin.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=false
+WorkingDirectory={{app_dir}}
+User={{app_user}}
+Group={{app_user}}
+ExecStart=/usr/bin/java "-Xmx1g" "-jar" "{{app_dir}}/sync.jar" \
+  "-c" "{{app_dir}}/config.yml" "run"
+
+[Install]
+WantedBy=multi-user.target
+
+# vi: ft=sh
