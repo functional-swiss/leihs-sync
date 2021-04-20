@@ -2,4 +2,5 @@
 .DS_Store/
 .cpcache/
 .nrepl-port
+config.yml
 tmp/

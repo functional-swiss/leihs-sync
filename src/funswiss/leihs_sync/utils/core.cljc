@@ -1,5 +1,7 @@
-(ns funswiss.aad-leihs-sync.utils.core
-  (:refer-clojure :exclude [str keyword]))
+(ns funswiss.leihs-sync.utils.core
+  (:refer-clojure :exclude [str keyword])
+  (:require
+    [taoensso.timbre :as logging :refer [debug info spy]]))
 
 (defn str
   "Like clojure.core/str but maps keywords to strings without preceding colon."
@@ -26,6 +28,23 @@
     (apply merge-with deep-merge vals)
     (last vals)))
 
+(defn deep-merge-limited [max-level & vals]
+  (logging/info 'max-level max-level 'vals vals)
+  (if-not (every? map? vals)
+    (last vals)
+    (if (= max-level 0)
+      (apply merge vals)
+      (apply merge-with (partial deep-merge-limited (dec max-level)) vals))))
+
+
+(comment
+  (deep-merge-limited
+    5
+    {:a {:b1 {:c1 1
+             :c2 2}
+         :b2 "foo"}}
+    {:a {:b1 {:c1 7}}}))
+
 (defn presence [v]
   "Returns nil if v is a blank string or if v is an empty collection.
    Returns v otherwise."
@@ -47,4 +66,14 @@
 (defn get! [m k]
   (when-not (contains? m k)
     (throw (ex-info (str " key " k " not present") {})))
-  (get m k))
+  (let [v (get m k)]
+    (when (nil? v)
+      (throw (ex-info (str "value of key " k " is nil") {})) )
+    v))
+
+(defn get-in! [m ks]
+  (let [[k & more] ks
+        v (get! m k)]
+    (if (seq more)
+      (get-in! v more)
+      v )))

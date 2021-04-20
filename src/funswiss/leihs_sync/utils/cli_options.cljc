@@ -1,4 +1,4 @@
-(ns funswiss.aad-leihs-sync.utils.cli-options
+(ns funswiss.leihs-sync.utils.cli-options
   (:refer-clojure :exclude [str keyword encode decode])
   (:require
     [camel-snake-kebab.core :refer [->snake_case]]
@@ -6,7 +6,7 @@
     [clojure.string :refer [upper-case]]
     [clojure.tools.cli :as cli]
     [environ.core :refer [env]]
-    [funswiss.aad-leihs-sync.utils.core :refer [keyword str presence deep-merge]]
+    [funswiss.leihs-sync.utils.core :refer [keyword str presence deep-merge]]
     [taoensso.timbre :as timbre :refer [debug info]]
     ))
 
@@ -63,19 +63,3 @@
                 option
                 (normalize-option option)
                 )))))
-
-(defn- parse-opts
-  "WIP, remove?"
-  [args raw-option-specs & options]
-  (let [option-specs (normalize-option-specs raw-option-specs)
-        {cli-options :options
-         argumens :arguments
-         summary :summary
-         errors :errors} (apply cli/parse-opts
-                                (concat [args option-specs] options))
-        file-options (if-let [path (:config-file options)]
-                       (-> path slurp yaml/parse-string
-                           (->> (into {})))
-                       {})]
-    (info 'compiled-opts (doall (compile-option-specs option-specs)))
-    (info 'cli-options cli-options)))

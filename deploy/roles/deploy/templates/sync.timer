@@ -1,8 +1,8 @@
 [Unit]
-Description= AAD Leihs {{leihs_sync_name}} Sync Timer
+Description= Leihs {{leihs_sync_name}} Sync Timer
 
 [Timer]
-OnCalendar=*-*-* 01:00:00
+OnCalendar=*-*-* 05:00:00
 RandomizedDelaySec=3600
 Persistent=true
 

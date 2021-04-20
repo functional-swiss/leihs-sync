@@ -1,7 +1,8 @@
 [Unit]
-Description=AAD Leihs {{leihs_sync_name}} Sync Service
+Description=Leihs {{leihs_sync_name}} Sync Service
 After=syslog.target
 After=network.target
+After=leihs-admin.service
 
 BindsTo=leihs-admin.service
 

@@ -1,10 +1,10 @@
-(ns funswiss.aad-leihs-sync.logging
+(ns funswiss.leihs-sync.utils.logging
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.tools.logging :as logging]
     [environ.core :refer [env]]
-    [funswiss.aad-leihs-sync.utils.cli-options :refer [long-opt-for-key]]
-    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str]]
+    [funswiss.leihs-sync.utils.cli-options :refer [long-opt-for-key]]
+    [funswiss.leihs-sync.utils.core :refer [keyword presence str]]
     [taoensso.timbre :as timbre :refer [debug info]]
     [taoensso.timbre.appenders.core :as appenders]
     [taoensso.timbre.tools.logging]
@@ -17,13 +17,6 @@
 
 (def logging-config-file-key :logging-config-file)
 (def options-keys [logging-config-file-key])
-
-(defn option-specs []
-  [["-l" (long-opt-for-key logging-config-file-key)
-    "Additional configuration file(s) for logging. See also https://github.com/ptaoussanis/timbre#configuration."
-    :multi true
-    :default (or (some->> logging-config-file-key env (conj [])) [])
-    :update-fn conj]])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

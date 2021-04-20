@@ -8,5 +8,5 @@ cd ${PROJECT_DIR}
 
 clojure -X:uberjar \
   :exec-fn 'hf.depstar/uberjar' :aot true :jar "\"tmp/sync.jar\"" \
-  :main-class funswiss.aad-leihs-sync.main
+  :main-class funswiss.leihs-sync.main
 

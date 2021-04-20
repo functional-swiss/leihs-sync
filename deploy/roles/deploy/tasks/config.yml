@@ -1,5 +1,5 @@
 - name: install config
-  copy:
+  template:
     src: '{{config_file}}'
     dest: '{{app_dir}}/config.yml'
     mode: 0600

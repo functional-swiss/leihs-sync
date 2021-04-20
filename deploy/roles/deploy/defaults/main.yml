@@ -1,4 +1,4 @@
-app_name: 'aad-leihs-{{leihs_sync_name}}-sync'
+app_name: 'leihs-{{leihs_sync_name}}-sync'
 app_user: '{{app_name}}'
 app_dir: '/{{app_name}}'
 config_file: '{{inventory_dir}}/config/{{leihs_sync_name}}_sync-config.yml'

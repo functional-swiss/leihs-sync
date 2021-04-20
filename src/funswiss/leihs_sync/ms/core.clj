@@ -1,4 +1,4 @@
-(ns funswiss.aad-leihs-sync.ms.core
+(ns funswiss.leihs-sync.ms.core
   (:refer-clojure :exclude [str keyword])
   (:require
     [clj-http.client :as http-client]
@@ -7,10 +7,10 @@
     [clojure.string :as string]
     ;[clojure.tools.logging :as logging]
     [clojure.walk :refer [keywordize-keys stringify-keys]]
-    [funswiss.aad-leihs-sync.leihs.core :as leihs]
-    [funswiss.aad-leihs-sync.ms.auth :as ms-auth]
-    [funswiss.aad-leihs-sync.utils.cli-options :as cli-opts]
-    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str get!]]
+    [funswiss.leihs-sync.leihs.core :as leihs]
+    [funswiss.leihs-sync.ms.auth :as ms-auth]
+    [funswiss.leihs-sync.utils.cli-options :as cli-opts]
+    [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
     [logbug.catcher]
     [ring.util.codec :refer [url-encode]]
     [taoensso.timbre :as logging :refer [debug info spy]]
@@ -18,16 +18,32 @@
 
 ;;; options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def prefix-key ms-auth/prefix-key)
 (def base-groups-key :base-groups)
+(def base-groups-keys [prefix-key base-groups-key])
 
-(defn options-specs []
-  (->>
-    [{:key base-groups-key
-      :desc "Seq of groups from which groups and users are taken transitivly. If nil all users and all groups in the direcory will be synced."
-      :parse-fn yaml/parse-string}]
-    cli-opts/normalize-option-specs
-    ))
 
+(def user-attribute-mapping-key :user-attribute-mapping)
+(def user-attribute-mapping-keys [prefix-key user-attribute-mapping-key])
+(def user-attribute-mapping-default {:mail :email
+                                     :surname :lastname
+                                     :id :org_id
+                                     :givenName :firstname})
+
+(def group-attribute-mapping-key :group-attribute-mapping)
+(def group-attribute-mapping-keys [prefix-key group-attribute-mapping-key])
+(def group-attribute-mapping-default {:id :org_id
+                                      :description :description
+                                      :displayName :name})
+
+(def config-defaults
+  (sorted-map
+    base-groups-key []
+    ms-auth/client-id-key nil
+    ms-auth/client-secret-key nil
+    ms-auth/tennant-id-key nil
+    user-attribute-mapping-key user-attribute-mapping-default
+    group-attribute-mapping-key group-attribute-mapping-default))
 
 ;;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -93,13 +109,11 @@
   (as-> data data
     (map-user-data-values data)
     (assoc data "id" (:id data))
-    (set/rename-keys data (:user-attribute-mapping config))
+    (set/rename-keys data (get-in! config user-attribute-mapping-keys))
     (keywordize-keys data)
-    (assoc data :organization (get! config leihs/leihs-organization-key))
     (dissoc data
             (keyword "@odata.context")
-            (keyword "@odata.type"))
-    (merge {} (get! config leihs/leihs-user-defaults-key) data)))
+            (keyword "@odata.type"))))
 
 (defn map-users-data [config users]
   (->> users
@@ -107,7 +121,9 @@
        seq->org-id-map))
 
 (defn all-users [config]
-  (let [query (some->> [(->> config :user-attribute-mapping keys select-query)
+  (let [query (some->> [(-> config
+                            (get-in! user-attribute-mapping-keys)
+                            keys select-query)
                         "$filter=accountEnabled%20eq%20true"]
                        (string/join "&"))]
     (-> {:url (str "/users/?" query)}
@@ -119,20 +135,18 @@
 (defn map-group-data [data config]
   (as-> data data
     (assoc data "id" (:id data))
-    (set/rename-keys data (:group-attribute-mapping config))
+    (set/rename-keys data (get-in! config group-attribute-mapping-keys))
     (keywordize-keys data)
-    (assoc data :organization (get! config leihs/leihs-organization-key))
     (dissoc data (keyword "@odata.context"))
-    (merge {} (get config :leihs-group-defaults) data)))
+    (merge {} data)))
 
 (defn group-select [config]
-  (->> config :group-attribute-mapping keys select-query))
+  (->> config (get-in! group-attribute-mapping-keys) keys select-query))
 
 (defn all-groups [config]
   (let
-    [query (some->> [(->> config :group-attribute-mapping keys select-query)
-                     ;(str "$filter=" (url-encode "groupTypes/any(c:c+eq+'Unified')"))
-                     ]
+    [query (some->> [(-> config (get-in! group-attribute-mapping-keys)
+                         keys select-query)]
                     (string/join "&"))
      url (str "/groups/?" query)]
     (-> {:url url}
@@ -153,7 +167,8 @@
      "#microsoft.graph.user"))
 
 (defn group-members [id config]
-  (let [query (some->> [(->> config :user-attribute-mapping vals select-query)]
+  (let [query (some->> [(-> config (get-in! user-attribute-mapping-keys)
+                            vals select-query)]
                        (string/join "&"))]
     (-> {:url (str "/groups/" id "/transitiveMembers"
                    (when query (str "?" query)))}
@@ -166,7 +181,8 @@
   (= (x (keyword "@odata.type" )) "#microsoft.graph.user"))
 
 (defn group-users [id config]
-  (let [query (->> [(->> config :user-attribute-mapping keys select-query)]
+  (let [query (->> [(-> config (get-in! user-attribute-mapping-keys)
+                        keys select-query)]
                    (string/join "&"))]
     (-> {:url (str "/groups/" id "/transitiveMembers?" query)}
         (seq-request config)
@@ -185,21 +201,23 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn photo-etag [id config]
-  (some-> {:url (str "/users/" id "/photo")
+(defn photo-etag [org-id config]
+  (logging/info "TODO transform org-id into real id")
+  (some-> {:url (str "/users/" org-id "/photo")
            :unexceptional-status #(or (<= 200 % 299)
                                       (= % 401)
                                       (= % 404))}
           (base-request config)
           ((fn [resp]
              (case (:status resp)
-               401 (logging/warn (str "401 photo-etag for " id))
+               401 (logging/warn (str "401 photo-etag for " org-id))
                resp)))
           :body (get (keyword "@odata.mediaEtag"))
           yaml/parse-string presence))
 
-(defn photo [id config]
-  (-> {:url (str "/users/" id "/photo/$value")
+(defn photo [org-id config]
+  (logging/info "TODO transform org-id into real id")
+  (-> {:url (str "/users/" org-id "/photo/$value")
        :accept "*"
        :as :byte-array}
       (base-request config)
@@ -210,7 +228,7 @@
 
 (defn users [config]
   (logging/info "START ms/users")
-  (let [res (if-let [base-groups (get config base-groups-key)]
+  (let [res (if-let [base-groups (-> config (get-in! base-groups-keys) seq)]
               (loop [users {}
                      groups-ids base-groups]
                 (if-let [group-id (first groups-ids)]
@@ -223,7 +241,7 @@
 
 (defn groups [config]
   (logging/info "START ns/groups")
-  (let [res (if-let [groups-ids (get config base-groups-key)]
+  (let [res (if-let [groups-ids (-> config (get-in! base-groups-keys) seq)]
               (loop [groups (->> groups-ids
                                  (map #(group % config))
                                  (map (fn [g] [(:org_id g) g]))

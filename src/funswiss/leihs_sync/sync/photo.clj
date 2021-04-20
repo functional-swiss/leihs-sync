@@ -1,4 +1,4 @@
-(ns funswiss.aad-leihs-sync.sync.photo
+(ns funswiss.leihs-sync.sync.photo
   (:refer-clojure :exclude [str keyword])
   (:require
     [clojure.java.io :as io]
@@ -6,8 +6,8 @@
     [clojure.pprint :refer [pprint]]
     [clojure.set :as set]
     [clojure.tools.logging :as logging]
-    [funswiss.aad-leihs-sync.ms.core :as ms]
-    [funswiss.aad-leihs-sync.utils.core :refer [keyword presence str get!]]
+    [funswiss.leihs-sync.ms.core :as ms]
+    [funswiss.leihs-sync.utils.core :refer [keyword presence str get!]]
     [logbug.catcher]
     [taoensso.timbre :as timbre :refer [debug info]]
     )
@@ -27,6 +27,7 @@
              "-background" "LightGray"
              "-gravity" "center"
              "-extent" (str x "x" y)
+             "-strip"
              "jpg:-"
              :in bx :out-enc :bytes]
         {:keys [exit out err]} (apply sh cmd)]
