@@ -4,19 +4,24 @@
     [clojure.pprint :refer [pprint]]
     [clojure.tools.cli :as cli]
     [clojure.set :as set]
-    [funswiss.leihs-sync.utils.cli-options :as cli-opts]
     [clj-yaml.core :as yaml]
     [clojure.string :as string]
     [funswiss.leihs-sync.leihs.core :as leihs-core]
     [funswiss.leihs-sync.ms.core :as ms-core]
     [funswiss.leihs-sync.sync.core :as sync-core]
+    [funswiss.leihs-sync.utils.cli-options :as cli-opts]
     [funswiss.leihs-sync.utils.core :refer [deep-merge-limited keyword presence str get! get-in!]]
     [funswiss.leihs-sync.utils.logging :as service-logging]
     [funswiss.leihs-sync.utils.repl :as repl]
-    [taoensso.timbre.tools.logging]
+    [logbug.thrown :as thrown]
     [taoensso.timbre :as logging :refer [debug info spy]]
+    [taoensso.timbre.tools.logging]
+    [zhdk.prtg :as prtg]
     [zhdk.zapi.core :as zapi-core])
   (:gen-class))
+
+
+(thrown/reset-ns-filter-regex #"^(funswiss|zhdk)\..*")
 
 (def config-file-key :config-file)
 (def write-config-file-key :write-config-file)
@@ -98,10 +103,14 @@
                   (repl/init @config*)
                   (service-logging/init options)
                   (.addShutdownHook (Runtime/getRuntime) (Thread. #(shutdown)))
-                  (sync-core/start @config*)))
+                  (sync-core/start @config*)
+                  (when-let [prtg-url (get @config* :prtg-url)]
+                    (prtg/send-success prtg-url @sync-core/state*))))
       (catch Throwable th
         (reset! exception* th)
-        (logging/error th)
+        (logging/error (thrown/stringify th))
+        (when-let [prtg-url (get @config* :prtg-url)]
+          (prtg/send-error prtg-url th))
         (when-not (:dev options)
           (System/exit -1))))
     (when-not (:dev options)

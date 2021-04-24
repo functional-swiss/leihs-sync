@@ -76,7 +76,13 @@ for the default value.
 export INVENTORY_DIR=/Users/thomas/Programming/LEIHS/leihs_v5/zhdk-inventory
 export HOSTS_FILE=test-hosts
 export LEIHS_SYNC_NAME='zapi'
-${INVENTORY_DIR}/leihs/deploy/bin/ansible-playbook -i ${INVENTORY_DIR}/${HOSTS_FILE} deploy/deploy_play.yml  -v  -e "leihs_sync_name=${LEIHS_SYNC_NAME}"
+ansible-playbook -i ${INVENTORY_DIR}/${HOSTS_FILE} deploy/deploy_play.yml  -v  -e "leihs_sync_name=${LEIHS_SYNC_NAME}"
+```
+
+
+```
+export HOSTS_FILE=staging-hosts
+~/Programming/LEIHS/leihs_v5/deploy/bin/ansible-playbook -i ${INVENTORY_DIR}/${HOSTS_FILE} deploy/deploy_play.yml -l zhdk-leihs-staging -e "leihs_sync_name=${LEIHS_SYNC_NAME}"
 ```
 
 
