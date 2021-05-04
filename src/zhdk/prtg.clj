@@ -22,7 +22,16 @@
 (defn send-success [prtg-url state]
   (let [msg {:prtg
              {:result
-              (->> state keys
+              (->> [:groups-added-count
+                    :groups-deleted-count
+                    :groups-updated-count
+                    :groups-users-updated-count
+                    :users-created-count
+                    :users-deleted-count
+                    :users-disabled-count
+                    :users-photos-checked
+                    :users-photos-updated
+                    :users-updated-count]
                    (map (fn [kw]
                           {:channel kw
                            :unit "Count"
