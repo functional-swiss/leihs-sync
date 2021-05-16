@@ -1,14 +1,18 @@
-Leihs MS-Graph (Azure-AD) Sync
-===============================
+Leihs Sync
+==========
 
-This project contains code and a service to sync users and groups from
-Microsoft Azure-AD via the Microsoft Graph API into a leihs instance.
+This project contains code and a service to sync users and groups into an
+instance of Leihs. It currently supports two source systems:
+
+* Microsoft Azure-AD via the Microsoft Graph API, and
+* ZAPI an internal API used within the ZHdK.
 
 License and Copyright
 ---------------------
 
-Copyright © Functional LLC Switzerland
-Thomas.Schank@functional.swiss
+Copyright ©
+Functional LLC Switzerland https://functional.swiss/, and
+Zurich University of the Arts https://www.zhdk.ch/
 
 The contents of this repository may be used under the terms of either the
 
@@ -76,7 +80,7 @@ for the default value.
 export INVENTORY_DIR=/Users/thomas/Programming/LEIHS/leihs_v5/zhdk-inventory
 export HOSTS_FILE=test-hosts
 export LEIHS_SYNC_NAME='zapi'
-ansible-playbook -i ${INVENTORY_DIR}/${HOSTS_FILE} deploy/deploy_play.yml  -v  -e "leihs_sync_name=${LEIHS_SYNC_NAME}"
+ansible-playbook -i ${INVENTORY_DIR}/${HOSTS_FILE} ${INVENTORY_DIR}/leihs/deploy/deploy_play.yml  -v  -e "leihs_sync_name=${LEIHS_SYNC_NAME}"
 ```
 
 

@@ -36,6 +36,7 @@
                           {:channel kw
                            :unit "Count"
                            :value (get! state kw)})))}}]
+    (logging/info "send-success" msg)
     (post prtg-url msg)))
 
 (defn send-error [prtg-url ex]
