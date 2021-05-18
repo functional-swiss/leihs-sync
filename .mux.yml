@@ -1,4 +1,4 @@
-name: FUNCTIONAL/leihs-azure-ad-sync
+name: FUNCTIONAL/leihs-sync
 windows:
   2:
     name: run

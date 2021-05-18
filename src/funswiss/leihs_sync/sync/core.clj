@@ -147,15 +147,17 @@
 (defn disable-user [leihs-user]
   (let [properties (get-in! @config* [prefix-key user-disable-properties-key])
         ks (keys properties)
+        org-id (:org_id leihs-user)
         to-be-updated-ks (filter #(not= (% properties)
                                         (% leihs-user)) ks)]
     (when-let [data (some-> properties
                             (select-keys to-be-updated-ks)
                             disable-image-props
                             not-empty)]
-      (debug 'DISABLING (:org_id leihs-user) data)
-      (swap! state* update-in [:users-disabled-count] inc)
-      (leihs/update-user @config* (:id leihs-user) data))))
+      (debug 'DISABLING org-id data)
+      (leihs/update-user @config* (:id leihs-user) data)
+      (swap! leihs-users* update-in [org-id] #(merge % data))
+      (swap! state* update-in [:users-disabled-count] inc))))
 
 (defn delete-user [leihs-user]
   (leihs/delete-user @config* (:id leihs-user))
@@ -316,6 +318,7 @@
   (info "START update-images")
   (case (get-in! @config* user-photo-mode-keys)
     "eager" (->> @leihs-users* vals
+                 (filter :account_enabled)
                  (map check-and-update-image)
                  doall)
     "lazy" (->> @leihs-users* vals
