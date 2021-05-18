@@ -316,6 +316,7 @@
   (info "START update-images")
   (case (get-in! @config* user-photo-mode-keys)
     "eager" (->> @leihs-users* vals
+                 (filter :account_enabled)
                  (map check-and-update-image)
                  doall)
     "lazy" (->> @leihs-users* vals
