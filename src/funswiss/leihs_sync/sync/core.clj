@@ -243,7 +243,7 @@
   (if (= org-id (:org_id (all-users-group)))
     (-> @nominal-users* keys set)
     (case (source-kw)
-      :ms (-> org-id (ms/group-users org-id @config*) keys set)
+      :ms (-> org-id (ms/group-users @config*) keys set)
       :zapi (-> org-id (zapi/group-users @config*)))))
 
 (defn update-groups-users []

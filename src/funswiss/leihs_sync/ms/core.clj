@@ -45,6 +45,9 @@
     user-attribute-mapping-key user-attribute-mapping-default
     group-attribute-mapping-key group-attribute-mapping-default))
 
+
+(defonce users* (atom nil))
+
 ;;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn select-query [sxs]
@@ -141,7 +144,7 @@
     (merge {} data)))
 
 (defn group-select [config]
-  (->> config (get-in! group-attribute-mapping-keys) keys select-query))
+  (-> config (get-in! group-attribute-mapping-keys) keys select-query))
 
 (defn all-groups [config]
   (let
@@ -202,18 +205,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn photo-etag [org-id config]
-  (logging/info "TODO transform org-id into real id")
-  (some-> {:url (str "/users/" org-id "/photo")
-           :unexceptional-status #(or (<= 200 % 299)
-                                      (= % 401)
-                                      (= % 404))}
-          (base-request config)
-          ((fn [resp]
-             (case (:status resp)
-               401 (logging/warn (str "401 photo-etag for " org-id))
-               resp)))
-          :body (get (keyword "@odata.mediaEtag"))
-          yaml/parse-string presence))
+  (let [id (get-in! @users* [org-id :id])]
+    (some-> {:url (str "/users/" id "/photo")
+             :unexceptional-status #(or (<= 200 % 299)
+                                        (= % 401)
+                                        (= % 404))}
+            (base-request config)
+            ((fn [resp]
+               (case (:status resp)
+                 401 (logging/warn (str "401 photo-etag for " org-id))
+                 resp)))
+            :body (get (keyword "@odata.mediaEtag"))
+            yaml/parse-string presence)))
 
 (defn photo [org-id config]
   (logging/info "TODO transform org-id into real id")
@@ -236,7 +239,8 @@
                          (rest groups-ids))
                   users))
               (all-users config))]
-    (logging/info "DONE ms/users #" (count res))
+    (reset! users* res)
+    (logging/info "DONE ms/users #" (count @users*))
     res ))
 
 (defn groups [config]
