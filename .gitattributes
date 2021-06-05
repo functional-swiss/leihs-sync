@@ -1,3 +1,4 @@
 *.key filter=git-crypt diff=git-crypt
 *secret* filter=git-crypt diff=git-crypt
 secrets/** filter=git-crypt diff=git-crypt
+proto-config/**yml filter=git-crypt diff=git-crypt

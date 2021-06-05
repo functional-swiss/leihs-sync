@@ -3,4 +3,5 @@
 .cpcache/
 .nrepl-port
 config.yml
+resources/version.yml
 tmp/

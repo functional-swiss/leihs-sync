@@ -18,6 +18,8 @@
     [taoensso.timbre.tools.logging]
     [zhdk.prtg :as prtg]
     [zhdk.zapi.core :as zapi-core])
+  (:import
+    [java.time LocalDateTime Instant])
   (:gen-class))
 
 
@@ -25,6 +27,21 @@
 
 (def config-file-key :config-file)
 (def write-config-file-key :write-config-file)
+
+(def REPO "https://github.com/functional-swiss/leihs-sync")
+
+(defn version-info []
+  (or (some-> "version.yml" clojure.java.io/resource
+              slurp yaml/parse-string)
+      {:commit-id "DEV"
+       :commit-timestamp (str (LocalDateTime/now))
+       :build-timestamp (str (LocalDateTime/now))}))
+
+(defn version-str []
+  (let [version (version-info)
+        commit-id (-> version :commit-id (#(subs % 0 (min 7 (count %)))))]
+    (str "Build: " (:build-timestamp version) " "
+         "URL: " REPO "/commit/" commit-id )))
 
 (def cli-options
   (concat
@@ -40,7 +57,8 @@
      ["-l" (cli-opts/long-opt-for-key service-logging/logging-config-file-key)
       "Additional configuration file(s) for logging. See also https://github.com/ptaoussanis/timbre#configuration."
       :default []
-      :update-fn conj]]))
+      :update-fn conj]
+     ["-v" "--version"]]))
 
 (defn main-usage [options-summary & more]
   (->> ["add-leihs-sync"
@@ -94,6 +112,8 @@
                      (main-usage summary {:args args :options options})
                      "\n\n"
                      "config: " @config*)
+        (:version
+          options) (println (version-str))
         (write-config-file-key
           options) (spit (write-config-file-key options)
                          (yaml/generate-string
@@ -103,6 +123,7 @@
                   (repl/init @config*)
                   (service-logging/init options)
                   (.addShutdownHook (Runtime/getRuntime) (Thread. #(shutdown)))
+                  (logging/info "leihs-sync" (version-str))
                   (sync-core/start @config*)
                   (when-let [prtg-url (get @config* :prtg-url)]
                     (prtg/send-success prtg-url @sync-core/state*))))

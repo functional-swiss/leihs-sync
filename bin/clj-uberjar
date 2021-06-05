@@ -6,6 +6,8 @@ DIGEST="$(git -C "$PROJECT_DIR" log -n 1 HEAD --pretty=%T)"
 
 cd ${PROJECT_DIR}
 
+./bin/version
+
 clojure -X:uberjar \
   :exec-fn 'hf.depstar/uberjar' :aot true :jar "\"tmp/sync.jar\"" \
   :main-class funswiss.leihs-sync.main
