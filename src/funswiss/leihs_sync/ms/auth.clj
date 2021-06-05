@@ -21,8 +21,8 @@
 (def client-secret-key :client-secret)
 (def client-secret-keys [prefix-key client-secret-key])
 
-(def tennant-id-key :tennat-id)
-(def tennant-id-keys [prefix-key tennant-id-key])
+(def tenant-id-key :tenant-id)
+(def tenant-id-keys [prefix-key tenant-id-key])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,7 +36,7 @@
         :accept :json}
        (http-client/post
          (str "https://login.microsoftonline.com/"
-              (get-in! config tennant-id-keys)
+              (get-in! config tenant-id-keys)
               "/oauth2/v2.0/token"))
        :body))
 

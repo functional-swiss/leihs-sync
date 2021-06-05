@@ -41,7 +41,7 @@
     base-groups-key []
     ms-auth/client-id-key nil
     ms-auth/client-secret-key nil
-    ms-auth/tennant-id-key nil
+    ms-auth/tenant-id-key nil
     user-attribute-mapping-key user-attribute-mapping-default
     group-attribute-mapping-key group-attribute-mapping-default))
 
