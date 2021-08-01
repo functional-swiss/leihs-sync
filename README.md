@@ -122,13 +122,13 @@ https://docs.microsoft.com/en-us/graph/auth-v2-service#4-get-an-access-token
 ```
 export CLIENT_ID='...'
 export CLIENT_SECRET='...'
-export TENNANT_ID='...'
+export TENANT_ID='...'
 ```
 
 ```
 curl -i -X POST -H "Content-Type: application/x-www-form-urlencoded" \
   -d "client_id=${CLIENT_ID}&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&client_secret=${CLIENT_SECRET}&grant_type=client_credentials" \
-  "https://login.microsoftonline.com/${TENNANT_ID}/oauth2/v2.0/token"
+  "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token"
 ```
 
 
@@ -136,10 +136,15 @@ curl -i -X POST -H "Content-Type: application/x-www-form-urlencoded" \
 ```
 export TOKEN=$(curl -q -X POST -H "Content-Type: application/x-www-form-urlencoded" \
   -d "client_id=${CLIENT_ID}&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&client_secret=${CLIENT_SECRET}&grant_type=client_credentials" \
-  "https://login.microsoftonline.com/${TENNANT_ID}/oauth2/v2.0/token" \
+  "https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token" \
   | jq '.access_token' --raw-output)
 
 ```
+
+
+### Properties
+
+see https://docs.microsoft.com/en-us/graph/api/resources/user?view=graph-rest-1.0
 
 
 ### Test Access
@@ -149,6 +154,16 @@ export TOKEN='...'
 
 curl -i 'https://graph.microsoft.com/v1.0/users?$top=2' \
   -H "Authorization: Bearer ${TOKEN}"
+
+
+export EMAIL='...'
+
+curl -i "https://graph.microsoft.com/v1.0/users?$filter=mail eq '$EMAIL'" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+curl -i 'https://graph.microsoft.com/v1.0/users?$filter=mail eq ‘john@contoso.com’' -H "Authorization: Bearer ${TOKEN}"
+
+curl -i "https://graph.microsoft.com/v1.0/users?$count=true\&\$filter=endsWith(mail,'dieter.wiesflecker@phzh.ch')\&\$select=id,displayName,mail" -H "Authorization: Bearer ${TOKEN}"
 
 export GROUP_ID='...'
 
@@ -167,10 +182,17 @@ curl "https://graph.microsoft.com/v1.0/users/${USER_ID}" \
   -H "Authorization: Bearer ${TOKEN}" | json_pp
 
 
+curl "https://graph.microsoft.com/v1.0/users/${USER_ID}?$expand=extensions" \
+  -H "Authorization: Bearer ${TOKEN}" | json_pp
+
+
+
+
 curl "https://graph.windows.net/mytenant.onmicrosoft.com/users/${USER_ID}?api-version=1.6" \
   -H "Authorization: Bearer ${TOKEN}" | json_pp
 
 ```
+
 
 
 

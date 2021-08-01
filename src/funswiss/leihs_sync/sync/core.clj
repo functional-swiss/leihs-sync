@@ -389,8 +389,11 @@
   (info "STATE" @state*))
 
 
+;(first @nominal-groups*)
+;(first @nominal-users*)
 ;(ms/group "f2c49a49-fc49-42db-b145-ab42f07fdb8d" @config*)
 ;(ms/all-groups @config*)
+;(reset! nominal-users* (ms/all-users @config*))
 ;(ms/users @config*)
 ;(-> @leihs-users* )
 ;(info @config*)

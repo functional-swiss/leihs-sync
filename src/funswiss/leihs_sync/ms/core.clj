@@ -23,18 +23,67 @@
 (def base-groups-keys [prefix-key base-groups-key])
 
 
-(def user-attribute-mapping-key :user-attribute-mapping)
-(def user-attribute-mapping-keys [prefix-key user-attribute-mapping-key])
-(def user-attribute-mapping-default {:mail :email
-                                     :surname :lastname
-                                     :id :org_id
-                                     :givenName :firstname})
+;;; data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def group-attribute-mapping-key :group-attribute-mapping)
-(def group-attribute-mapping-keys [prefix-key group-attribute-mapping-key])
-(def group-attribute-mapping-default {:id :org_id
-                                      :description :description
-                                      :displayName :name})
+(defonce users-raw* (atom nil))
+(defonce users-mapped* (atom nil))
+
+(defonce groups-raw* (atom  nil))
+(defonce groups-mapped* (atom  nil))
+
+;;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def user-request-properties-preset
+  #{:city
+    :businessPhones
+    :country
+    :givenName
+    :id
+    :mail
+    :mobilePhone
+    :otherMails
+    :postalCode
+    :streetAddress
+    :surname })
+
+(def user-request-additional-properties-key :user-request-additional-properties)
+(def user-request-additional-properties-keys [prefix-key user-request-additional-properties-key])
+
+(def user-attribute-mapping-preset
+  {:address :streetAddress
+   :city :city
+   :country :country
+   :email :mail
+   :firstname :givenName
+   :id :id
+   :lastname :surname
+   :org_id :id
+   :phone #(some->> (concat [] (:businessPhones %) [(:mobilePhone %)]) (filter identity) first)
+   :secondary_email #(some-> % :otherMails first)
+   :zip :postalCode })
+
+(def user-attributes-custom-mapping-key :user-attributes-custom-mapping)
+(def user-attributes-custom-mapping-keys [prefix-key user-attributes-custom-mapping-key])
+
+
+;;; group ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def group-request-properties-preset
+  #{:description
+    :displayName
+    :id})
+
+(def group-attribute-mapping-preset
+  {:id :id
+   :org_id :id
+   :description :description
+   :name :displayName})
+
+(def group-attributes-custom-mapping-key :group-attributes-custom-mapping)
+(def group-attributes-custom-mapping-keys [prefix-key group-attributes-custom-mapping-key])
+
+(def group-request-additional-properties-key :group-request-additional-properties)
+(def group-request-additional-properties-keys [prefix-key group-request-additional-properties-key])
 
 (def config-defaults
   (sorted-map
@@ -42,11 +91,10 @@
     ms-auth/client-id-key nil
     ms-auth/client-secret-key nil
     ms-auth/tenant-id-key nil
-    user-attribute-mapping-key user-attribute-mapping-default
-    group-attribute-mapping-key group-attribute-mapping-default))
-
-
-(defonce users* (atom nil))
+    user-attributes-custom-mapping-key {}
+    user-request-additional-properties-key []
+    group-attributes-custom-mapping-key {}
+    group-request-additional-properties-key []))
 
 ;;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -55,9 +103,30 @@
                        set (set/union #{"id"})
                        (string/join ","))))
 
+(defn assert-id [entity id-kw]
+  (when-not (presence (get entity id-kw))
+    (throw
+      (ex-info (str "entity has no or empty "
+                    id-kw " attribute ") {:entity entity}))))
+
+(defn warn-id [entity id-kw]
+  (when-not (presence (get entity id-kw))
+    (logging/warn (str "Entity has no " id-kw) entity)))
+
+(defn seq->id-map [xs]
+  (doseq [x xs] (assert-id x :id))
+  (zipmap (map :id xs) xs))
+
+(defn id-map->org-id-map [m]
+  (let [xs (vals m)]
+    (doseq [x xs] (assert-id x :org_id))
+    (zipmap (map :org_id xs) xs)))
+
 (defn seq->org-id-map [xs]
-  (zipmap (map :org_id xs)
-          xs))
+  (doseq [x xs] (warn-id x :org_id))
+  (let [xs-clean (->> xs (filter #(get % :org_id)))]
+    (zipmap (map :org_id xs-clean) xs-clean)))
+
 
 ;;; request ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -88,7 +157,7 @@
       (base-request config)
       :body :value))
 
-(defn seq-request [params config]
+(defn seq-request [config params]
   (loop [url (:url params)
          value []]
     (let [res (base-request (assoc params :url url) config)
@@ -99,24 +168,34 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn map-user-data-values [data]
-  (as-> data data
-    (if (contains? data :businessPhones)
-      (update-in data [:businessPhones] first)
-      data)
-    (if (contains? data :otherMails)
-      (update-in data [:otherMails] first)
-      data)))
+(defn users-property-select-query-part [config]
+  (->> user-request-additional-properties-keys
+       (get-in! config)
+       (concat user-request-properties-preset)
+       select-query))
+
+(defn users-query [config]
+  (string/join
+    "&"
+    [(users-property-select-query-part config)]))
+
+(defn map-entity-data [mapping data]
+  (->> mapping
+       (map (fn [[k v]]
+              [k (cond
+                   (keyword? v) (get data v)
+                   (string? v) (get data (keyword v))
+                   (fn? v) (v data)
+                   (map? v) (if-let [fun (get v :fn)]
+                              (apply (eval (read-string fun)) [data])
+                              (throw (ex-info "fn not supplied" {}))))]))
+       (into {})))
 
 (defn map-user-data [config data]
-  (as-> data data
-    (map-user-data-values data)
-    (assoc data "id" (:id data))
-    (set/rename-keys data (get-in! config user-attribute-mapping-keys))
-    (keywordize-keys data)
-    (dissoc data
-            (keyword "@odata.context")
-            (keyword "@odata.type"))))
+  (map-entity-data
+    (merge user-attribute-mapping-preset
+           (get-in! config user-attributes-custom-mapping-keys))
+    data))
 
 (defn map-users-data [config users]
   (->> users
@@ -124,88 +203,81 @@
        seq->org-id-map))
 
 (defn all-users [config]
-  (let [query (some->> [(-> config
-                            (get-in! user-attribute-mapping-keys)
-                            keys select-query)
-                        "$filter=accountEnabled%20eq%20true"]
-                       (string/join "&"))]
-    (-> {:url (str "/users/?" query)}
-        (seq-request config)
-        (->> (map-users-data config)))))
+  (->> {:url (str "/users/?" (users-query config))}
+       (seq-request config)
+       seq->id-map))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn map-group-data [data config]
-  (as-> data data
-    (assoc data "id" (:id data))
-    (set/rename-keys data (get-in! config group-attribute-mapping-keys))
-    (keywordize-keys data)
-    (dissoc data (keyword "@odata.context"))
-    (merge {} data)))
+(defn map-group-data [config data]
+  (map-entity-data
+    (merge group-attribute-mapping-preset
+           (get-in! config group-attributes-custom-mapping-keys))
+    data))
 
-(defn group-select [config]
-  (-> config (get-in! group-attribute-mapping-keys) keys select-query))
+(defn groups-property-select-query-part [config]
+  (->> group-request-additional-properties-keys
+       (get-in! config)
+       (concat group-request-properties-preset)
+       select-query))
+
+(defn groups-query [config]
+  (string/join
+    "&"
+    [(groups-property-select-query-part config)]))
 
 (defn all-groups [config]
-  (let
-    [query (some->> [(-> config (get-in! group-attribute-mapping-keys)
-                         keys select-query)]
-                    (string/join "&"))
-     url (str "/groups/?" query)]
-    (-> {:url url}
-        (seq-request config)
-        (->> (map #(map-group-data % config))
-             (map #(do [(:org_id %) %]))
-             (into {})))))
+  (->> {:url (str "/groups/?" (groups-query config))}
+       (seq-request config)
+       seq->id-map))
 
 (defn group [id config]
-  (-> {:url (str "/groups/" id "?"
-                 (some->> [(group-select config)]
-                          (string/join "&")))}
+  (-> {:url (str "/groups/" id "?" (groups-query config))}
       (base-request config) :body
-      (map-group-data config)))
+      ))
 
 (defn group-user-filter [x]
   (= (x (keyword "@odata.type" ))
      "#microsoft.graph.user"))
 
-(defn group-members [id config]
-  (let [query (some->> [(-> config (get-in! user-attribute-mapping-keys)
-                            vals select-query)]
-                       (string/join "&"))]
-    (-> {:url (str "/groups/" id "/transitiveMembers"
-                   (when query (str "?" query)))}
-        (seq-request config)
-        (->> (filter group-user-filter)
-             (map :id)
-             set))))
-
 (defn user-filter [x]
   (= (x (keyword "@odata.type" )) "#microsoft.graph.user"))
 
 (defn group-users [id config]
-  (let [query (->> [(-> config (get-in! user-attribute-mapping-keys)
-                        keys select-query)]
-                   (string/join "&"))]
-    (-> {:url (str "/groups/" id "/transitiveMembers?" query)}
-        (seq-request config)
-        (->> (into [])
-             (filter user-filter)
-             (map-users-data config)))))
+  (logging/info 'group-users id)
+  (->> {:url (str "/groups/" id "/transitiveMembers?" (users-query config))}
+       (seq-request config)
+       (filter user-filter)
+       seq->id-map))
 
-(defn group-groups [id config]
+(defn group-groups [config {id :id}]
   "return the group members of the group with the given id, not recursive"
-  (-> {:url (str "/groups/" id "/members/microsoft.graph.group"
-                 "?" (some->> [(group-select config)]
-                              (string/join "&")))}
-      (seq-request config)
-      (->> (map #(map-group-data % config))
-           seq->org-id-map)))
+  (->> {:url (str "/groups/" id "/members/microsoft.graph.group"
+                  "?"  (groups-query config))}
+       (seq-request config)
+       seq->id-map))
+
+(defn groups-recursive [config base-groups]
+  (loop [groups (->> base-groups
+                     (map #(group % config))
+                     seq->id-map)
+         front groups
+         level 0]
+    (let [next-front (reduce-kv
+                       (fn [m _ group]
+                         (merge m (group-groups config group)))
+                       {} front)
+          new-front (apply dissoc next-front (keys groups))]
+      (if (empty? new-front)
+        groups
+        (recur (merge groups new-front)
+               new-front
+               (inc level))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn photo-etag [org-id config]
-  (let [id (get-in! @users* [org-id :id])]
+  (let [id (get-in! @users-mapped* [org-id :id])]
     (some-> {:url (str "/users/" id "/photo")
              :unexceptional-status #(or (<= 200 % 299)
                                         (= % 401)
@@ -219,52 +291,56 @@
             yaml/parse-string presence)))
 
 (defn photo [org-id config]
-  (logging/info "TODO transform org-id into real id")
-  (-> {:url (str "/users/" org-id "/photo/$value")
-       :accept "*"
-       :as :byte-array}
-      (base-request config)
-      :body))
+  (let [id (get-in! @users-mapped* [org-id :id])]
+    (-> {:url (str "/users/" org-id "/photo/$value")
+         :accept "*"
+         :as :byte-array}
+        (base-request config)
+        :body)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn groups-users [config groups-ids]
+  (loop [users {}
+         groups-ids groups-ids]
+    (if-let [group-id (first groups-ids)]
+      (recur (merge users (group-users group-id config))
+             (rest groups-ids))
+      users)))
+
 (defn users [config]
   (logging/info "START ms/users")
-  (let [res (if-let [base-groups (-> config (get-in! base-groups-keys) seq)]
-              (loop [users {}
-                     groups-ids base-groups]
-                (if-let [group-id (first groups-ids)]
-                  (recur (merge users (group-users group-id config))
-                         (rest groups-ids))
-                  users))
-              (all-users config))]
-    (reset! users* res)
-    (logging/info "DONE ms/users #" (count @users*))
-    res ))
+  (->>
+    (if-let [base-groups-ids (-> config (get-in! base-groups-keys) seq)]
+      (groups-users config base-groups-ids)
+      (all-users config))
+    (reset! users-raw*)
+    vals
+    (map (partial map-user-data config))
+    (reset! users-mapped*)
+    seq->org-id-map
+    (reset! users-mapped*))
+  (logging/info "DONE ms/users #" (count @users-mapped*))
+  @users-mapped*)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn groups [config]
   (logging/info "START ns/groups")
-  (let [res (if-let [groups-ids (-> config (get-in! base-groups-keys) seq)]
-              (loop [groups (->> groups-ids
-                                 (map #(group % config))
-                                 (map (fn [g] [(:org_id g) g]))
-                                 (into {}))
-                     front groups
-                     level 0]
-                (let [next-front (reduce-kv
-                                   (fn [m _ group]
-                                     (merge m (group-groups (:id group) config)))
-                                   {} front)
-                      new-front (apply dissoc next-front (keys groups))]
-                  (if (empty? new-front)
-                    groups
-                    (recur (merge groups new-front)
-                           new-front
-                           (inc level)))))
-              (all-groups config))]
-    (logging/info "DONE ns/groups #" (count res))
-    res))
+  (->> (if-let [base-groups (-> config (get-in! base-groups-keys) seq)]
+         (groups-recursive config base-groups)
+         (all-groups config))
+       (reset! groups-raw*)
+       vals
+       (map (partial map-group-data config))
+       (reset! groups-mapped*)
+       (seq->org-id-map)
+       (reset! groups-mapped*))
+  (logging/info "DONE ns/groups #" (count @groups-mapped*))
+  @groups-mapped*)
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
