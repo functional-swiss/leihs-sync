@@ -21,3 +21,8 @@
     name: '{{app_name}}.timer'
     enabled: yes
     state: started
+
+- name: run the sync service now
+  service:
+    name: '{{app_name}}.service'
+    state: started
