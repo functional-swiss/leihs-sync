@@ -1,0 +1,46 @@
+core:
+  group-create-defaults:
+    admin_protected: true
+    system_admin_protected: true
+  group-filter-blacklist-regexes: []
+  group-filter-whitelist-regex: .*
+  group-update-defaults:
+    admin_protected: true
+    system_admin_protected: true
+  organization: functional.swiss
+  source: ms
+  user-create-defaults:
+    account_enabled: true
+    admin_protected: true
+    is_admin: true
+    is_system_admin: true
+    password_sign_in_enabled: true
+    system_admin_protected: true
+  user-disable-properties:
+    account_enabled: false
+  user-photo-mode: eager
+  user-update-defaults:
+    account_enabled: true
+    admin_protected: true
+    is_admin: true
+    is_system_admin: true
+    password_sign_in_enabled: true
+    system_admin_protected: true
+leihs:
+  base-url: 'http://localhost:80'
+  token: '{{functional_sync_token}}'
+ms:
+  base-groups:
+    - 1ff99e8d-c222-4af7-b4bf-34feb8b9d969 # Leihs-Instanz-Admins
+    # - f2c49a49-fc49-42db-b145-ab42f07fdb8d # recursion test group client-id: 65426107-544c-4123-a3cf-35662942cf6c
+  client-id: 65426107-544c-4123-a3cf-35662942cf6c
+  client-secret: '{{functional_sync_client_secret}}'
+  group-attributes-custom-mapping: {}
+  group-request-additional-properties: []
+  user-attributes-custom-mapping: {}
+  user-request-additional-properties: []
+  tenant-id: '{{functional_tenant_id}}'
+repl:
+  enabled: false
+  bind: localhost
+  port-file: .nrepl-port
