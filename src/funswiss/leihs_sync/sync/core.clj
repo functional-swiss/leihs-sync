@@ -68,7 +68,7 @@
 
 (def initial-state
   {:errors []
-   :groups-added-count 0
+   :groups-created-count 0
    :groups-deleted-count 0
    :groups-updated-count 0
    :groups-users-updated-count 0
@@ -175,6 +175,21 @@
   (info "DONE delete-or-disable-users deleted: " (-> @state* :users-deleted-count)
         ", disabled: " (-> @state* :users-disabled-count)))
 
+(defn users-total-enabled-disabled-count-stat []
+  (->> @leihs-users*
+       (map second)
+       (reduce (fn [agg user]
+                 (let [inc-kw (if (:account_enabled user)
+                                :users-total-enabled-count
+                                :users-total-disabled-count)]
+                   (update agg inc-kw inc)))
+               {:users-total-enabled-count 0
+                :users-total-disabled-count 0})))
+
+(defn stat-users []
+  (swap! state* merge (users-total-enabled-disabled-count-stat)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def _all-users-group
@@ -212,7 +227,7 @@
                              (get-in! @config* [prefix-key group-create-defaults-key])
                              (get @nominal-groups* org-id)))]
       (swap! leihs-groups* assoc org-id group))
-    (swap! state* update-in [:groups-added-count] inc))
+    (swap! state* update-in [:groups-created-count] inc))
   (info "DONE" 'create-groups))
 
 (defn update-groups []
@@ -386,6 +401,7 @@
   (update-groups)
   (update-groups-users)
   (update-images)
+  (stat-users)
   (info "STATE" @state*))
 
 

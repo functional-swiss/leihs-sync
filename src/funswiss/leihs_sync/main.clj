@@ -13,6 +13,7 @@
     [funswiss.leihs-sync.utils.core :refer [deep-merge-limited keyword presence str get! get-in!]]
     [funswiss.leihs-sync.utils.logging :as service-logging]
     [funswiss.leihs-sync.utils.repl :as repl]
+    [funswiss.leihs-sync.zabbix-sender :as zabbix-sender]
     [logbug.thrown :as thrown]
     [taoensso.timbre :as logging :refer [debug info spy]]
     [taoensso.timbre.tools.logging]
@@ -86,7 +87,9 @@
     ms-core/prefix-key ms-core/config-defaults
     repl/prefix-key repl/config-defaults
     leihs-core/prefix-key leihs-core/config-defaults
-    zapi-core/prefix-key zapi-core/config-defaults))
+    zapi-core/prefix-key zapi-core/config-defaults
+    zabbix-sender/prefix-key zabbix-sender/config-defaults
+    ))
 
 (def config* (atom default-config))
 
@@ -126,7 +129,9 @@
                   (logging/info "leihs-sync" (version-str))
                   (sync-core/start @config*)
                   (when-let [prtg-url (get @config* :prtg-url)]
-                    (prtg/send-success prtg-url @sync-core/state*))))
+                    (prtg/send-success prtg-url @sync-core/state*))
+                  (zabbix-sender/send-success @config* @sync-core/state*)
+                  ))
       (catch Throwable th
         (reset! exception* th)
         (logging/error (thrown/stringify th))

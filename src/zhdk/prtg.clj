@@ -22,7 +22,7 @@
 (defn send-success [prtg-url state]
   (let [msg {:prtg
              {:result
-              (->> [:groups-added-count
+              (->> [:groups-created-count
                     :groups-deleted-count
                     :groups-updated-count
                     :groups-users-updated-count
