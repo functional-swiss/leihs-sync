@@ -14,7 +14,7 @@
 
 (def prefix-key :zabbix-sender)
 
-(def key-prefix-key :prefix-key)
+(def key-param-key :key-param)
 (def binary-path-key :binary-path)
 (def config-file-key :config-file)
 
@@ -24,7 +24,7 @@
   (sorted-map
     binary-path-key "zabbix_sender"
     config-file-key "/etc/zabbix/zabbix_agent2.conf"
-    key-prefix-key "local"
+    key-param-key "foo-bar"
     enabled-key false))
 
 (defn send-success [config state]
@@ -34,7 +34,7 @@
         state *state* ]
     (logging/info 'send-success config state)
     (when (get-in config [prefix-key enabled-key])
-      (let [prefix (get-in config [prefix-key key-prefix-key])
+      (let [param-key (get-in config [prefix-key key-param-key])
             in (-> state
                    (select-keys [:groups-created-count
                                  :groups-deleted-count
@@ -47,7 +47,7 @@
                                  :users-total-disabled-count
                                  :users-total-enabled-count])
                    (->> (map (fn [[k v]]
-                               (str "- " prefix "." k " " (get state k))))
+                               (str "- " "leihs-sync." k "[" param-key "] " (get state k) )))
                         (string/join "\n")))
             cmd [(get-in config [prefix-key binary-path-key])
                  "-c" (get-in config [prefix-key config-file-key])
