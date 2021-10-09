@@ -10,8 +10,9 @@
     [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
     [logbug.catcher]
     [taoensso.timbre :as logging :refer [debug info]]
-    [zhdk.zapi.core :as zapi]
-    ))
+    [zhdk.zapi.core :as zapi])
+  (:import
+    [clojure.lang ExceptionInfo]))
 
 
 (def prefix-key :core)
@@ -166,12 +167,21 @@
 
 (defn delete-or-disable-users []
   (info "START delete-or-disable-users")
-  (doseq [org-id (set/difference (-> @leihs-users* keys set)
+  (doseq [org-id (set/difference (-> @leihs-users* keys set )
                                  (-> @nominal-users* keys set))]
     (let [leihs-user (get! @leihs-users* org-id)]
-      (if (:last_sign_in_at leihs-user)
+      ; do not delete account if it was used to sign-in (can't because of audits and more
+      ; always disable if has been disabled before (see catch below)
+      (if (or (:last_sign_in_at leihs-user)
+              (-> :account_enabled leihs-user not))
         (disable-user leihs-user)
-        (delete-user leihs-user))))
+        ; there are a few corner cases where :last_sign_in_at is not sufficient
+        ; to determe if an account can be deleted
+        (try (delete-user leihs-user)
+             (catch ExceptionInfo e
+               (if (some-> e ex-data :status (= 409))
+                 (disable-user leihs-user)
+                 (throw e)))))))
   (info "DONE delete-or-disable-users deleted: " (-> @state* :users-deleted-count)
         ", disabled: " (-> @state* :users-disabled-count)))
 

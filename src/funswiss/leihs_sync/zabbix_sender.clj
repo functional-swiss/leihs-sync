@@ -32,7 +32,6 @@
   (def ^:dynamic *state* state)
   (let [config *config*
         state *state* ]
-    (logging/info 'send-success config state)
     (when (get-in config [prefix-key enabled-key])
       (let [param-key (get-in config [prefix-key key-param-key])
             in (-> state
