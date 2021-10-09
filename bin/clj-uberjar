@@ -1,14 +1,40 @@
 #!/usr/bin/env bash
-set -euxo
+set -eux
 
 PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
+
+cd $PROJECT_DIR
+source $PROJECT_DIR/clojure/bin/activate
+
+PROJECT_NAME='leihs-sync'
+JAR_NAME="${PROJECT_NAME}.jar"
 DIGEST="$(git -C "$PROJECT_DIR" log -n 1 HEAD --pretty=%T)"
+LOCAL_CACHE_DIR="${LOCAL_CACHE_DIR:-"${TMPDIR:-/tmp/}build-cache"}"
+LOCAL_CACHED_ARTEFACT_PATH="${LOCAL_CACHE_DIR}/${PROJECT_NAME}_${DIGEST}.jar"
 
-cd ${PROJECT_DIR}
 
-./bin/version
 
-clojure -X:uberjar \
-  :exec-fn 'hf.depstar/uberjar' :aot true :jar "\"tmp/sync.jar\"" \
-  :main-class funswiss.leihs-sync.main
+if $(git -C $PROJECT_DIR diff --quiet); then
+  BUILD_CACHE_DISABLED="${BUILD_CACHE_DISABLED:-NO}"
+else
+  BUILD_CACHE_DISABLED="YES"
+fi
 
+function build {
+  ./bin/version
+  clojure -X:uberjar \
+    :exec-fn 'hf.depstar/uberjar' :aot true :jar "${JAR_NAME}" \
+    :main-class funswiss.leihs-sync.main
+}
+
+if [ $BUILD_CACHE_DISABLED == "YES" ]; then
+  build
+else
+  if [ -e $LOCAL_CACHED_ARTEFACT_PATH ]; then
+    echo "INFO: locally cached jar found"
+    cp $LOCAL_CACHED_ARTEFACT_PATH $PROJECT_DIR/$JAR_NAME
+  else
+    build
+    cp $PROJECT_DIR/$JAR_NAME $LOCAL_CACHED_ARTEFACT_PATH
+  fi
+fi

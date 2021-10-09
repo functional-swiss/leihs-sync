@@ -10,6 +10,6 @@
 
 - name: copy uberjar
   copy:
-    src: '{{playbook_dir}}/../tmp/sync.jar'
-    dest: '{{app_dir}}/sync.jar'
+    src: '{{playbook_dir}}/../leihs-sync.jar'
+    dest: '{{app_dir}}/leihs-sync.jar'
     owner: '{{app_user}}'
