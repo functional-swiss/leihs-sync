@@ -65,7 +65,7 @@
 (defn request-users [config]
   (let [base-url (get-in! config [prefix-key base-url-key])
         token (get-in! config [prefix-key token-key])
-        fields user-keys-read
+        fields (disj user-keys-read :img32_url :img256_url)
         query {:per-page 1000
                :fields (cheshire/generate-string fields)
                :account_enabled ""
