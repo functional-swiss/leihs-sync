@@ -1,0 +1,34 @@
+- name: zabbix secret is present
+  stat:
+    path: /etc/zabbix/secrets/psk.txt
+  register: zabbix_secrets_psk_stat
+
+- name: install zabbix-sender
+  apt:
+    name: zabbix-sender
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  when: zabbix_secrets_psk_stat.stat.exists
+
+- name: make zabbix_secrets readeable for group
+  file:
+    path: /etc/zabbix/secrets/
+    state: directory
+    mode: g+rx
+  when: zabbix_secrets_psk_stat.stat.exists
+
+- name: make zabbix_secrets_psk readeable for group
+  file:
+    path: /etc/zabbix/secrets/psk.txt
+    state: file
+    mode: g+r
+  when: zabbix_secrets_psk_stat.stat.exists
+
+- name: add user to zabbix group
+  user:
+    name: '{{app_user}}'
+    groups: zabbix
+    append: yes
+  when: zabbix_secrets_psk_stat.stat.exists
+

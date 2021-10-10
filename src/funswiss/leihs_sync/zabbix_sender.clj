@@ -32,25 +32,29 @@
   (def ^:dynamic *state* state)
   (let [config *config*
         state *state* ]
-    (when (get-in config [prefix-key enabled-key])
-      (let [param-key (get-in config [prefix-key key-param-key])
-            in (-> state
-                   (select-keys [:groups-created-count
-                                 :groups-deleted-count
-                                 :groups-updated-count
-                                 :groups-users-updated-count
-                                 :users-created-count
-                                 :users-deleted-count
-                                 :users-disabled-count
-                                 :users-updated-count
-                                 :users-total-disabled-count
-                                 :users-total-enabled-count])
-                   (->> (map (fn [[k v]]
-                               (str "- " "leihs-sync." k "[" param-key "] " (get state k) )))
-                        (string/join "\n")))
-            cmd [(get-in config [prefix-key binary-path-key])
-                 "-c" (get-in config [prefix-key config-file-key])
-                 "-i" "-"
-                 :in in]
-            {:keys [exit out err]} (apply sh cmd)]
-        (logging/info exit out err cmd)))))
+    (if (get-in config [prefix-key enabled-key])
+      (do (logging/info "zabbix-sender: invoking ...")
+          (let [param-key (get-in config [prefix-key key-param-key])
+                in (-> state
+                       (select-keys [:groups-created-count
+                                     :groups-deleted-count
+                                     :groups-updated-count
+                                     :groups-users-updated-count
+                                     :users-created-count
+                                     :users-deleted-count
+                                     :users-disabled-count
+                                     :users-updated-count
+                                     :users-total-disabled-count
+                                     :users-total-enabled-count])
+                       (->> (map (fn [[k v]]
+                                   (str "- " "leihs-sync." k "[" param-key "] " (get state k) )))
+                            (string/join "\n")))
+                cmd [(get-in config [prefix-key binary-path-key])
+                     "-c" (get-in config [prefix-key config-file-key])
+                     "-i" "-"
+                     :in in]
+                {:keys [exit out err]} (apply sh cmd)]
+            (if (= 0 exit)
+              (logging/info "zabbix-sender: success" {:out out})
+              (throw (ex-info "zabbix-sender: failed " {:exit exit :out out :error err :cmd cmd})))))
+      (logging/info "zabbix-sender: skipped because it is disabled"))))
