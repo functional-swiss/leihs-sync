@@ -44,3 +44,8 @@ repl:
   enabled: false
   bind: localhost
   port-file: .nrepl-port
+zabbix-sender:
+  binary-path: zabbix_sender
+  config-file-key: "/etc/zabbix/zabbix_agent2.conf"
+  enabled: true
+  key-param: functional
