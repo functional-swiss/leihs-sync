@@ -111,18 +111,24 @@
 (defn update-user [config id data]
   (logging/debug 'update-user config id data)
   (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])]
-    (-> (str base-url "/admin/users/" id)
-        (http-client/patch
-          {:accept :json
-           :as :json
-           :content-type :json
-           :basic-auth [token ""]
-           :body (-> data
-                     keywordize-keys
-                     (select-keys user-keys-writeable)
-                     cheshire/generate-string)})
-        :body)))
+        token (get-in! config [prefix-key token-key])
+        url (str base-url "/admin/users/" id)
+        req {:url url
+             :method :patch
+             :accept :json
+             :as :json
+             :content-type :json
+             :body (-> data
+                       keywordize-keys
+                       (select-keys user-keys-writeable)
+                       cheshire/generate-string)}]
+    (try (-> req
+             (assoc :basic-auth [token ""])
+             http-client/request
+             :body)
+         (catch Throwable e
+           (logging/warn "update-user failed "  req)
+           (throw e)))))
 
 (defn delete-user [config id]
   (let [base-url (get-in! config [prefix-key base-url-key])
