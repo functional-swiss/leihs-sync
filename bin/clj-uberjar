@@ -22,9 +22,7 @@ fi
 
 function build {
   ./bin/version
-  clojure -X:uberjar \
-    :exec-fn 'hf.depstar/uberjar' :aot true :jar "${JAR_NAME}" \
-    :main-class funswiss.leihs-sync.main
+  clojure -T:build uber
 }
 
 if [ $BUILD_CACHE_DISABLED == "YES" ]; then
