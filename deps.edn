@@ -6,7 +6,7 @@
   clj-commons/clj-yaml {:mvn/version "0.7.108"}
   clj-http/clj-http {:mvn/version "3.12.3"}
   com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
-  com.taoensso/timbre {:mvn/version "5.1.2"}
+  com.taoensso/timbre {:mvn/version "5.2.1"}
   crypto-random/crypto-random {:mvn/version "1.2.1"}
   digest/digest {:mvn/version "1.4.10"}
   environ/environ {:mvn/version "1.2.0"}
@@ -27,10 +27,10 @@
  {;
 
   :build {:deps
-          {io.github.clojure/tools.build {:git/tag "v0.8.0" :git/sha "badbac7"}}
+          {io.github.clojure/tools.build {:git/tag "v0.8.2" :git/sha "ba1a2bf"}}
           :ns-default scripts.build}
 
-  :outdated {:extra-deps {com.github.liquidz/antq {:mvn/version "1.6.0"} }
+  :outdated {:extra-deps {com.github.liquidz/antq {:mvn/version "1.6.2"} }
              :main-opts ["-m" "antq.core"]}
 
   :resource-paths ["resources"]
