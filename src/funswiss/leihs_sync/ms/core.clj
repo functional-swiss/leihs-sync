@@ -13,8 +13,11 @@
     [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
     [logbug.catcher]
     [ring.util.codec :refer [url-encode]]
-    [taoensso.timbre :as logging :refer [debug info spy]]
+    [taoensso.timbre :as logging :refer [error warn info debug spy]]
     ))
+
+(def MAX_RETRIES 3)
+
 
 ;;; options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -142,15 +145,28 @@
    :accept :json
    :as :json})
 
+
 (defn base-request
   [params config & {:keys [modify]
                     :or {modify identity}}]
-  (-> request-defaults
-      (ms-auth/add-auth-header config)
-      (merge params)
-      (update-in [:url] prefix-url)
-      modify
-      http-client/request))
+  (loop [retry 0]
+    (Thread/sleep (* retry retry 10 1000))
+    (if-let [res (try  (-> request-defaults
+                           (ms-auth/add-auth-header config)
+                           (merge params)
+                           (update-in [:url] prefix-url)
+                           modify
+                           http-client/request)
+                      (catch clojure.lang.ExceptionInfo ex
+                        (warn "Cought request exception " ex)
+                        (when (<= MAX_RETRIES retry)
+                          (throw (ex-info "To many request retries "
+                                          {:status (-> ex ex-data :status)
+                                           :params params})))
+                        (when (not= (-> ex ex-data :status) 504)
+                          (throw ex))))]
+      res
+      (recur (inc retry)))))
 
 (defn map-request [params config]
   (-> params
