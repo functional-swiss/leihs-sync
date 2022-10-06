@@ -9,7 +9,7 @@
     [funswiss.leihs-sync.utils.cli-options :as cli-opts :refer [long-opt-for-key]]
     [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
     [logbug.catcher]
-    [taoensso.timbre :as logging :refer [debug info]]
+    [taoensso.timbre :as logging :refer [error warn info debug spy]]
     [zhdk.zapi.core :as zapi])
   (:import
     [clojure.lang ExceptionInfo]))
@@ -179,9 +179,13 @@
         ; to determe if an account can be deleted
         (try (delete-user leihs-user)
              (catch ExceptionInfo e
-               (if (some-> e ex-data :status (= 409))
+               (if (contains? #{409 422}
+                              (some-> e ex-data :status))
                  (disable-user leihs-user)
-                 (throw e)))))))
+                 (do (warn "Deleting user-account "
+                           leihs-user " failed with"
+                           (str (.getMessage e)))
+                     (throw e))))))))
   (info "DONE delete-or-disable-users deleted: " (-> @state* :users-deleted-count)
         ", disabled: " (-> @state* :users-disabled-count)))
 

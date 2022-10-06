@@ -136,7 +136,9 @@
     (-> (str base-url "/admin/users/" id)
         (http-client/delete
           {:accept :json
-           :basic-auth [token ""]}))))
+           :basic-auth [token ""]
+           :throw-entire-message? true
+           }))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
