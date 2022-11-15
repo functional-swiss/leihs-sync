@@ -26,3 +26,5 @@
   service:
     name: '{{app_name}}.service'
     state: started
+  async: 3600
+  poll: 10
