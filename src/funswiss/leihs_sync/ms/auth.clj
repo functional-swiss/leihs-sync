@@ -15,6 +15,10 @@
 
 (def prefix-key :ms)
 
+(def http-client-defaults-key :http-client-defaults)
+(def http-client-defaults-keys [prefix-key :http-client-defaults])
+(def http-client-defaults {})
+
 (def client-id-key :client-id)
 (def client-id-keys [prefix-key client-id-key])
 
@@ -28,12 +32,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-token-uncached [config]
-  (->> {:form-params {:client_id (get-in! config client-id-keys)
-                      :scope "https://graph.microsoft.com/.default"
-                      :client_secret (get-in! config client-secret-keys)
-                      :grant_type "client_credentials"}
-        :as :json
-        :accept :json}
+  (->> (merge 
+         {}
+         (get-in! config http-client-defaults-keys)
+         {:form-params {:client_id (get-in! config client-id-keys)
+                        :scope "https://graph.microsoft.com/.default"
+                        :client_secret (get-in! config client-secret-keys)
+                        :grant_type "client_credentials"}
+          :as :json
+          :accept :json})
        (http-client/post
          (str "https://login.microsoftonline.com/"
               (get-in! config tenant-id-keys)

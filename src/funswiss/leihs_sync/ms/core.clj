@@ -22,9 +22,10 @@
 ;;; options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def prefix-key ms-auth/prefix-key)
+
+
 (def base-groups-key :base-groups)
 (def base-groups-keys [prefix-key base-groups-key])
-
 
 ;;; data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -94,6 +95,7 @@
     ms-auth/client-id-key nil
     ms-auth/client-secret-key nil
     ms-auth/tenant-id-key nil
+    ms-auth/http-client-defaults-key ms-auth/http-client-defaults
     user-attributes-custom-mapping-key {}
     user-request-additional-properties-key []
     group-attributes-custom-mapping-key {}
@@ -140,18 +142,20 @@
     url
     (str BASE-URL url)))
 
-(def request-defaults
-  {:method :get
-   :accept :json
-   :as :json})
-
+(defn request-defaults [config]
+  (merge
+    {}
+    (get-in! config ms-auth/http-client-defaults-keys)
+    {:method :get
+     :accept :json
+     :as :json}))
 
 (defn base-request
   [params config & {:keys [modify]
                     :or {modify identity}}]
   (loop [retry 0]
     (Thread/sleep (* retry retry 10 1000))
-    (if-let [res (try  (-> request-defaults
+    (if-let [res (try  (-> (request-defaults config)
                            (ms-auth/add-auth-header config)
                            (merge params)
                            (update-in [:url] prefix-url)
