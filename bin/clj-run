@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
+set -euo pipefail
 PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
 cd $PROJECT_DIR
-source $PROJECT_DIR/clojure/bin/activate
-
+./bin/env/java-setup
+./bin/env/clojure-setup
 rm -f resources/version.yml
-
-set -euo
 clj -m funswiss.leihs-sync.main "$@"

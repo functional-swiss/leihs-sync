@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-set -eux
+set -euo pipefail
 
 PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
 
 cd $PROJECT_DIR
-source $PROJECT_DIR/clojure/bin/activate
+./bin/env/java-setup
+./bin/env/clojure-setup
 
 PROJECT_NAME='leihs-sync'
 JAR_NAME="${PROJECT_NAME}.jar"
 DIGEST="$(git -C "$PROJECT_DIR" log -n 1 HEAD --pretty=%T)"
 LOCAL_CACHE_DIR="${LOCAL_CACHE_DIR:-"${TMPDIR:-/tmp/}build-cache"}"
 LOCAL_CACHED_ARTEFACT_PATH="${LOCAL_CACHE_DIR}/${PROJECT_NAME}_${DIGEST}.jar"
-
-
 
 if $(git -C $PROJECT_DIR diff --quiet); then
   BUILD_CACHE_DISABLED="${BUILD_CACHE_DISABLED:-NO}"
