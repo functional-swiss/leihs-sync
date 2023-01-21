@@ -197,3 +197,35 @@ curl "https://graph.windows.net/mytenant.onmicrosoft.com/users/${USER_ID}?api-ve
 
 
 
+Migrating an existing User-Base to Microsoft Sync
+-------------------------------------------------
+
+
+### Step 1 - Prepare org_id with email
+
+    UPDATE users SET organization = 'your.org' WHERE email ilike '%your.org';
+    UPDATE users SET org_id = email WHERE email ilike '%your.org';
+
+### Step 2 - Run the sync identifying by `email`
+
+run the sync with the following settings:
+
+    user-attributes-custom-mapping:
+      org_id: 'mail'
+      extended_info:
+        fn: >
+          (fn [data]
+            { :ms_id (:id data) })
+
+### Map to MS-ID
+
+    UPDATE users SET org_id = extended_info->>'ms_id'
+      WHERE extended_info->>'ms_id' IS NOT NULL;
+
+### Clean-up Unmatched Accounts
+
+
+    UPDATE users SET organization = 'local', email = NULL WHERE organization = 'your.org' AND extended_info->'ms_id' IS NULL;
+
+
+
