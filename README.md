@@ -195,6 +195,20 @@ curl "https://graph.windows.net/mytenant.onmicrosoft.com/users/${USER_ID}?api-ve
 
 
 
+Testing with a Forward-Proxy
+-------------------------------------------------
+
+see `test/forward_proxy`
+
+run: `./test/forward_proxy/bin/run`
+
+validate it is working: 
+
+    curl -i --proxy 'http://localhost:3288' https://google.ch
+
+
+
+
 
 
 Migrating an existing User-Base to Microsoft Sync

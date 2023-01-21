@@ -4,3 +4,10 @@ windows:
     name: run
     command: |
       ./bin/clj-run -c config.yml run
+  6: 
+    name: forward-proxy
+    command: ./test/forward_proxy/bin/run
+  7:
+    name: forward-proxy-log
+    command: CONTAINER_NAME=FOO ./test/forward_proxy/bin/log
+

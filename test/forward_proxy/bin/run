@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
+cd $PROJECT_DIR
+
+./bin/build
+
+docker run \
+ --add-host=host.docker.internal:host-gateway \
+ --interactive \
+ --publish 3288:80 \
+ --tty \
+ leihs-sync-forward-proxy \
+ /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2 -DFOREGROUND"
