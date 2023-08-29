@@ -1,36 +1,36 @@
 {:paths ["src" "resources"]
  :deps
  {;
-  camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.2"}
-  cheshire/cheshire {:mvn/version "5.10.2"}
-  clj-commons/clj-yaml {:mvn/version "0.7.108"}
+  camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
+  cheshire/cheshire {:mvn/version "5.11.0"}
+  clj-commons/clj-yaml {:mvn/version "1.0.27"}
   clj-http/clj-http {:mvn/version "3.12.3"}
-  com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
-  com.taoensso/timbre {:mvn/version "5.2.1"}
+  com.fzakaria/slf4j-timbre {:mvn/version "0.4.0"}
+  com.taoensso/timbre {:mvn/version "6.2.2"}
   crypto-random/crypto-random {:mvn/version "1.2.1"}
   digest/digest {:mvn/version "1.4.10"}
   environ/environ {:mvn/version "1.2.0"}
   honeysql/honeysql {:mvn/version "1.0.461"}
-  http-kit/http-kit {:mvn/version "2.5.3"}
-  inflections/inflections {:mvn/version "0.13.2"}
+  http-kit/http-kit {:mvn/version "2.7.0"}
+  inflections/inflections {:mvn/version "0.14.1"}
   logbug/logbug {:mvn/version "5.0.0"}
-  nrepl/nrepl {:mvn/version "0.9.0"}
+  nrepl/nrepl {:mvn/version "1.0.0"}
   org.clojure/core.memoize {:mvn/version "1.0.257"}
   org.clojure/data.codec {:mvn/version "0.1.1"}
-  org.clojure/tools.cli {:mvn/version "1.0.206"}
+  org.clojure/tools.cli {:mvn/version "1.0.219"}
   org.clojure/tools.logging {:mvn/version "1.2.4"}
   ring-middleware-accept/ring-middleware-accept {:mvn/version "2.0.3"}
   ring/ring-codec {:mvn/version "1.2.0"}
-  ring/ring-core {:mvn/version "1.9.5"}
+  ring/ring-core {:mvn/version "1.10.0"}
   }
  :aliases
  {;
 
   :build {:deps
-          {io.github.clojure/tools.build {:git/tag "v0.8.2" :git/sha "ba1a2bf"}}
+          {io.github.clojure/tools.build {:git/tag "v0.9.5" :git/sha "24f2894"}}
           :ns-default scripts.build}
 
-  :outdated {:extra-deps {com.github.liquidz/antq {:mvn/version "1.6.2"} }
+  :outdated {:extra-deps {com.github.liquidz/antq {:mvn/version "2.5.1109"} }
              :main-opts ["-m" "antq.core"]}
 
   :resource-paths ["resources"]
