@@ -11,6 +11,10 @@
   (:import
     [java.util Base64]))
 
+
+(def BASE-URL "https://zapi.zhdk.ch/v2")
+
+
 (def prefix-key :zapi)
 (def token-keys [prefix-key :token])
 (def page-limit-keys [prefix-key :page-limit])
@@ -47,7 +51,7 @@
                       ;:last_name "kmit"
                       }]
     (-> (http-client/get
-          "https://zapi.zhdk.ch/v1/person/"
+          (str BASE-URL "/person/")
           {:query-params query-params
            :accept :json
            :as :json
@@ -110,7 +114,7 @@
         query-params {:offset (* page page-limit)
                       :limit page-limit}]
     (-> (http-client/get
-          "https://zapi.zhdk.ch/v1/user-group/"
+          (str BASE-URL "/user-group/")
           {:query-params query-params
            :accept :json
            :as :json
