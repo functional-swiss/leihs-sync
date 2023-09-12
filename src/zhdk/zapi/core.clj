@@ -44,7 +44,9 @@
         page-limit (get-in! config page-limit-keys)
         query-params {:offset (* page page-limit)
                       :limit page-limit
-                      :only_zhdk false ; TODO communicate !
+                      ; {:only_zhdk true} replaced with {:has_account true}, 
+                      ; the latter includes a few more users which can sign in via AGW
+                      :has_account true
                       :fieldsets person-fieldsets
                       ;:last_name "schank"
                       ;:last_name "albrecht"

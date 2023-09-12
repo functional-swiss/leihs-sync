@@ -12,7 +12,7 @@
     [funswiss.leihs-sync.utils.cli-options :as cli-opts]
     [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
     [logbug.catcher]
-    [taoensso.timbre :as logging :refer [debug info spy]]
+    [taoensso.timbre :as logging :refer [debug info spy error]]
     ))
 
 (def base-url-key :base-url)
@@ -95,18 +95,22 @@
 
 (defn create-user [config user]
   (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])]
-    (-> (str base-url "/admin/users/")
-        (http-client/post
-          {:accept :json
-           :as :json
-           :content-type :json
-           :basic-auth [token ""]
-           :body (-> user
-                     keywordize-keys
-                     (select-keys user-keys-writeable)
-                     cheshire/generate-string)})
-        :body)))
+        token (get-in! config [prefix-key token-key])
+        body (-> user
+                 keywordize-keys
+                 (select-keys user-keys-writeable)
+                 cheshire/generate-string)]
+    (try (-> (str base-url "/admin/users/")
+             (http-client/post
+               {:accept :json
+                :as :json
+                :content-type :json
+                :basic-auth [token ""]
+                :body body})
+             :body)
+         (catch Exception ex
+           (error "create-user faild" {:body body})
+           (throw ex)))))
 
 (defn update-user [config id data]
   (logging/debug 'update-user config id data)
@@ -127,7 +131,7 @@
              http-client/request
              :body)
          (catch Throwable e
-           (logging/warn "update-user failed "  req)
+           (error "update-user failed "  req)
            (throw e)))))
 
 (defn delete-user [config id]
