@@ -13,7 +13,7 @@ WorkingDirectory={{app_dir}}
 User={{app_user}}
 Group={{app_user}}
 ExecStart=/usr/bin/java "-Xmx1g" "-jar" "{{app_dir}}/leihs-sync.jar" \
-  "-c" "{{app_dir}}/config.yml" "run"
+  "-c" "{{config_file_target}}" "run"
 
 [Install]
 WantedBy=multi-user.target
