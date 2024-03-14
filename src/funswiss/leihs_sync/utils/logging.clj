@@ -24,7 +24,11 @@
 (taoensso.timbre.tools.logging/use-timbre)
 
 (def config-defaults
-  {:min-level :info})
+  {:min-level [
+               [#{""} :debug]
+               [#{"funswiss.*"} :info]
+               [#{"*" :warn}]
+               ]})
 
 (timbre/merge-config! config-defaults)
 

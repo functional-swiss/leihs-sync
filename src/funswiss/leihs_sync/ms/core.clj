@@ -5,7 +5,6 @@
     [clj-yaml.core :as yaml]
     [clojure.set :as set]
     [clojure.string :as string]
-    ;[clojure.tools.logging :as logging]
     [clojure.walk :refer [keywordize-keys stringify-keys]]
     [funswiss.leihs-sync.leihs.core :as leihs]
     [funswiss.leihs-sync.ms.auth :as ms-auth]
@@ -13,7 +12,7 @@
     [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
     [logbug.catcher]
     [ring.util.codec :refer [url-encode]]
-    [taoensso.timbre :as logging :refer [error warn info debug spy]]
+    [taoensso.timbre :as timbre :refer [error warn info debug spy]]
     ))
 
 (def MAX_RETRIES 3)
@@ -27,10 +26,25 @@
 (def base-groups-key :base-groups)
 (def base-groups-keys [prefix-key base-groups-key])
 
+
 ;;; data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce users-raw* (atom nil))
 (defonce users-mapped* (atom nil))
+
+(comment
+  (->> @users-raw*
+       (map (fn [[k vs]]
+              (some-> vs
+                  :onPremisesExtensionAttributes
+                  :extensionAttribute8
+                  str
+                  (clojure.string/split #"@")
+                  first
+                  )))
+       (filter identity)
+       ))
+
 
 (defonce groups-raw* (atom  nil))
 (defonce groups-mapped* (atom  nil))
@@ -116,7 +130,7 @@
 
 (defn warn-id [entity id-kw]
   (when-not (presence (get entity id-kw))
-    (logging/warn (str "Entity has no " id-kw) entity)))
+    (warn (str "Entity has no " id-kw) entity)))
 
 (defn seq->id-map [xs]
   (doseq [x xs] (assert-id x :id))
@@ -264,7 +278,7 @@
   (= (x (keyword "@odata.type" )) "#microsoft.graph.user"))
 
 (defn group-users [id config]
-  (logging/info 'group-users id)
+  (debug 'group-users id)
   (->> {:url (str "/groups/" id "/transitiveMembers?" (users-query config))}
        (seq-request config)
        (filter user-filter)
@@ -305,7 +319,7 @@
             (base-request config)
             ((fn [resp]
                (case (:status resp)
-                 401 (logging/warn (str "401 photo-etag for " org-id))
+                 401 (warn (str "401 photo-etag for " org-id))
                  resp)))
             :body (get (keyword "@odata.mediaEtag"))
             yaml/parse-string presence)))
@@ -330,7 +344,7 @@
       users)))
 
 (defn users [config]
-  (logging/info "START ms/users")
+  (info "START ms/users")
   (->>
     (if-let [base-groups-ids (-> config (get-in! base-groups-keys) seq)]
       (groups-users config base-groups-ids)
@@ -341,14 +355,14 @@
     (reset! users-mapped*)
     seq->org-id-map
     (reset! users-mapped*))
-  (logging/info "DONE ms/users #" (count @users-mapped*))
+  (info "DONE ms/users #" (count @users-mapped*))
   @users-mapped*)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn groups [config]
-  (logging/info "START ns/groups")
+  (info "START ns/groups")
   (->> (if-let [base-groups (-> config (get-in! base-groups-keys) seq)]
          (groups-recursive config base-groups)
          (all-groups config))
@@ -358,12 +372,13 @@
        (reset! groups-mapped*)
        (seq->org-id-map)
        (reset! groups-mapped*))
-  (logging/info "DONE ns/groups #" (count @groups-mapped*))
+  (info "DONE ns/groups #" (count @groups-mapped*))
   @groups-mapped*)
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;timbre/*config*
-;(logging/merge-config! {:level :debug})
+;(timbre/set-ns-min-level! :debug)
+
 

@@ -96,7 +96,7 @@
 (defn shutdown []
   (repl/stop))
 
-(defn -main [& args]
+(defn main [args]
   (let [{:keys [options arguments errors summary]}
         (cli/parse-opts args cli-options :in-order true)
         pass-on-args (->> [options (rest arguments)]
@@ -126,6 +126,7 @@
                   (repl/init @config*)
                   (service-logging/init options)
                   (.addShutdownHook (Runtime/getRuntime) (Thread. #(shutdown)))
+
                   (logging/info "leihs-sync" (version-str))
                   (sync-core/start @config*)
                   (when-let [prtg-url (get @config* :prtg-url)]
@@ -141,6 +142,15 @@
           (System/exit -1))))
     (when-not (:dev options)
       (System/exit 0))))
+
+
+(defonce args* (atom nil))
+(when @args* (main @args*))
+
+(defn -main [& args]
+  (reset! args* args)
+  (main args))
+
 
 ;(-main "-d" "-c" "tmp/local-functional-test-config.secret.yml" "-h")
 ;(-main "-d" "--write-config-file" "config.yml")
