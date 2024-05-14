@@ -1,19 +1,18 @@
 (ns funswiss.leihs-sync.leihs.core
   (:refer-clojure :exclude [str keyword])
   (:require
-    [cheshire.core :as cheshire]
-    [clj-http.client :as http-client]
-    [clj-yaml.core :as yaml]
-    [clojure.set :as set]
-    [clojure.string :as string]
+   [cheshire.core :as cheshire]
+   [clj-http.client :as http-client]
+   [clj-yaml.core :as yaml]
+   [clojure.set :as set]
+   [clojure.string :as string]
     ;[clojure.tools.logging :as logging]
-    [clojure.walk :refer [keywordize-keys stringify-keys]]
-    [funswiss.leihs-sync.ms.auth :as ms-auth]
-    [funswiss.leihs-sync.utils.cli-options :as cli-opts]
-    [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
-    [logbug.catcher]
-    [taoensso.timbre :as logging :refer [debug info spy error]]
-    ))
+   [clojure.walk :refer [keywordize-keys stringify-keys]]
+   [funswiss.leihs-sync.ms.auth :as ms-auth]
+   [funswiss.leihs-sync.utils.cli-options :as cli-opts]
+   [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
+   [logbug.catcher]
+   [taoensso.timbre :as logging :refer [debug info spy error]]))
 
 (def base-url-key :base-url)
 (def token-key :token)
@@ -23,8 +22,8 @@
 
 (def config-defaults
   (sorted-map
-    base-url-key "http://localhost:3200"
-    token-key "TODO"))
+   base-url-key "http://localhost:3200"
+   token-key "TODO"))
 
 (def user-keys-read
   #{:account_disabled_at
@@ -71,15 +70,15 @@
                :account_enabled ""
                :organization (get-in! config [:core :organization])}]
     (loop
-      [page 1
-       users []]
+     [page 1
+      users []]
       (if-let [more-users (seq (-> (http-client/get
-                                     (str base-url "/admin/users/")
-                                     {:query-params
-                                      (assoc query :page page)
-                                      :accept :json
-                                      :as :json
-                                      :basic-auth [token ""]})
+                                    (str base-url "/admin/users/")
+                                    {:query-params
+                                     (assoc query :page page)
+                                     :accept :json
+                                     :as :json
+                                     :basic-auth [token ""]})
                                    :body :users))]
         (recur (inc page)
                (concat users more-users))
@@ -102,11 +101,11 @@
                  cheshire/generate-string)]
     (try (-> (str base-url "/admin/users/")
              (http-client/post
-               {:accept :json
-                :as :json
-                :content-type :json
-                :basic-auth [token ""]
-                :body body})
+              {:accept :json
+               :as :json
+               :content-type :json
+               :basic-auth [token ""]
+               :body body})
              :body)
          (catch Exception ex
            (error "create-user faild" {:body body})
@@ -131,7 +130,7 @@
              http-client/request
              :body)
          (catch Throwable e
-           (error "update-user failed "  req)
+           (error "update-user failed " req)
            (throw e)))))
 
 (defn delete-user [config id]
@@ -139,10 +138,9 @@
         token (get-in! config [prefix-key token-key])]
     (-> (str base-url "/admin/users/" id)
         (http-client/delete
-          {:accept :json
-           :basic-auth [token ""]
-           :throw-entire-message? true
-           }))))
+         {:accept :json
+          :basic-auth [token ""]
+          :throw-entire-message? true}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -167,8 +165,8 @@
                :account_enabled ""
                :organization (get-in! config [:core :organization])}]
     (loop
-      [page 1
-       groups []]
+     [page 1
+      groups []]
       (if-let [more-groups (seq (-> (http-client/get
                                      (str base-url "/admin/groups/")
                                      {:query-params
@@ -176,7 +174,7 @@
                                       :accept :json
                                       :as :json
                                       :basic-auth [token ""]})
-                                   :body :groups))]
+                                    :body :groups))]
         (recur (inc page)
                (concat groups more-groups))
         groups))))
@@ -184,8 +182,8 @@
 (defn groups [config]
   (info "GET leihs-groups")
   (let [groups (->> (request-groups config)
-                   (map #(do [(:org_id %) %]))
-                   (into {}))]
+                    (map #(do [(:org_id %) %]))
+                    (into {}))]
     (info "GOT " (count groups) " leihs groups")
     groups))
 
@@ -194,14 +192,14 @@
         token (get-in! config [prefix-key token-key])]
     (-> (str base-url "/admin/groups/")
         (http-client/post
-          {:accept :json
-           :as :json
-           :content-type :json
-           :basic-auth [token ""]
-           :body (-> group
-                     keywordize-keys
-                     (select-keys group-keys-writeable)
-                     cheshire/generate-string )})
+         {:accept :json
+          :as :json
+          :content-type :json
+          :basic-auth [token ""]
+          :body (-> group
+                    keywordize-keys
+                    (select-keys group-keys-writeable)
+                    cheshire/generate-string)})
         :body)))
 
 (defn update-group [config id data]
@@ -209,14 +207,14 @@
         token (get-in! config [prefix-key token-key])]
     (-> (str base-url "/admin/groups/" id)
         (http-client/patch
-          {:accept :json
-           :as :json
-           :content-type :json
-           :basic-auth [token ""]
-           :body (-> data
-                     keywordize-keys
-                     (select-keys group-keys-writeable)
-                     cheshire/generate-string )})
+         {:accept :json
+          :as :json
+          :content-type :json
+          :basic-auth [token ""]
+          :body (-> data
+                    keywordize-keys
+                    (select-keys group-keys-writeable)
+                    cheshire/generate-string)})
         :body)))
 
 (defn delete-group [config id]
@@ -224,27 +222,25 @@
         token (get-in! config [prefix-key token-key])]
     (-> (str base-url "/admin/groups/" id)
         (http-client/delete
-          {:accept :json
-           :basic-auth [token ""]}))))
-
+         {:accept :json
+          :basic-auth [token ""]}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn group-users [id config]
   (let [base-url (get-in! config [prefix-key base-url-key])
         token (get-in! config [prefix-key token-key])
-        query {:per-page 1000 }]
+        query {:per-page 1000}]
     (loop
-      [page 1
-       users []]
+     [page 1
+      users []]
       (if-let [more-users (seq (-> (http-client/get
-                                     (str base-url "/admin/groups/" id "/users/")
-                                     {:query-params
-                                      (assoc query :page page)
-                                      :accept :json
-                                      :as :json
-                                      :basic-auth [token ""]})
+                                    (str base-url "/admin/groups/" id "/users/")
+                                    {:query-params
+                                     (assoc query :page page)
+                                     :accept :json
+                                     :as :json
+                                     :basic-auth [token ""]})
                                    :body :users))]
         (recur (inc page)
                (concat users more-users))
@@ -254,10 +250,10 @@
   (let [base-url (get-in! config [prefix-key base-url-key])
         token (get-in! config [prefix-key token-key])]
     (http-client/put
-      (str base-url "/admin/groups/" id "/users/")
-      {:accept :json
-       :content-type :json
-       :as :json
-       :basic-auth [token ""]
-       :body (cheshire/generate-string
-               {:ids ids})})))
+     (str base-url "/admin/groups/" id "/users/")
+     {:accept :json
+      :content-type :json
+      :as :json
+      :basic-auth [token ""]
+      :body (cheshire/generate-string
+             {:ids ids})})))

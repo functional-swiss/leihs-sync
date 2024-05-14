@@ -1,19 +1,18 @@
 (ns funswiss.leihs-sync.sync.core
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clojure.pprint :refer [pprint]]
-    [clojure.set :as set]
-    [funswiss.leihs-sync.leihs.core :as leihs]
-    [funswiss.leihs-sync.ms.core :as ms]
-    [funswiss.leihs-sync.sync.photo :as photo]
-    [funswiss.leihs-sync.utils.cli-options :as cli-opts :refer [long-opt-for-key]]
-    [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
-    [logbug.catcher]
-    [taoensso.timbre :as logging :refer [error warn info debug spy]]
-    [zhdk.zapi.core :as zapi])
+   [clojure.pprint :refer [pprint]]
+   [clojure.set :as set]
+   [funswiss.leihs-sync.leihs.core :as leihs]
+   [funswiss.leihs-sync.ms.core :as ms]
+   [funswiss.leihs-sync.sync.photo :as photo]
+   [funswiss.leihs-sync.utils.cli-options :as cli-opts :refer [long-opt-for-key]]
+   [funswiss.leihs-sync.utils.core :refer [keyword presence str get! get-in!]]
+   [logbug.catcher]
+   [taoensso.timbre :as logging :refer [error warn info debug spy]]
+   [zhdk.zapi.core :as zapi])
   (:import
-    [clojure.lang ExceptionInfo]))
-
+   [clojure.lang ExceptionInfo]))
 
 (def prefix-key :core)
 
@@ -30,20 +29,20 @@
 
 (def user-disable-properties-key :user-disable-properties)
 (def user-disable-properties {:account_enabled false
-                                    :address nil
-                                    :badge_id nil
-                                    :city nil
-                                    :country nil
-                                    :email nil
-                                    :extended_info nil
-                                    :firstname nil
-                                    :img_digest nil
-                                    :lastname nil
-                                    :login nil
-                                    :phone nil
-                                    :secondary_email nil
-                                    :url nil
-                                    :zip nil })
+                              :address nil
+                              :badge_id nil
+                              :city nil
+                              :country nil
+                              :email nil
+                              :extended_info nil
+                              :firstname nil
+                              :img_digest nil
+                              :lastname nil
+                              :login nil
+                              :phone nil
+                              :secondary_email nil
+                              :url nil
+                              :zip nil})
 
 (def group-filter-blacklist-regexes-key :group-filter-blacklist-regexes)
 (def group-filter-blacklist-regexes-default [])
@@ -56,16 +55,16 @@
 
 (def config-defaults
   (sorted-map
-    group-filter-blacklist-regexes-key group-filter-blacklist-regexes-default
-    group-filter-whitelist-regex-key group-filter-whitelist-regex-default
-    group-create-defaults-key {}
-    group-update-defaults-key {}
-    user-create-defaults-key {}
-    user-disable-properties-key user-disable-properties
-    user-update-defaults-key {}
-    organization-key "TODO"
-    source-key "ms"
-    user-photo-mode-key user-photo-mode-default ))
+   group-filter-blacklist-regexes-key group-filter-blacklist-regexes-default
+   group-filter-whitelist-regex-key group-filter-whitelist-regex-default
+   group-create-defaults-key {}
+   group-update-defaults-key {}
+   user-create-defaults-key {}
+   user-disable-properties-key user-disable-properties
+   user-update-defaults-key {}
+   organization-key "TODO"
+   source-key "ms"
+   user-photo-mode-key user-photo-mode-default))
 
 (def initial-state
   {:errors []
@@ -78,7 +77,7 @@
    :users-disabled-count 0
    :users-photos-checked 0
    :users-photos-updated 0
-   :users-updated-count 0 })
+   :users-updated-count 0})
 
 (defonce state* (atom initial-state))
 
@@ -95,9 +94,9 @@
 (defn create-user [org-id]
   (debug "ADDING USER " org-id)
   (let [user (leihs/create-user
-               @config* (merge
-                          (get-in! @config* [prefix-key user-create-defaults-key])
-                          (get! @nominal-users* org-id)))]
+              @config* (merge
+                        (get-in! @config* [prefix-key user-create-defaults-key])
+                        (get! @nominal-users* org-id)))]
     (swap! leihs-users* assoc org-id user))
   (swap! state* update-in [:users-created-count] inc)
   org-id)
@@ -105,8 +104,8 @@
 (defn create-users []
   (info "START create-users")
   (->> (set/difference
-         (-> @nominal-users* keys set)
-         (-> @leihs-users* keys set))
+        (-> @nominal-users* keys set)
+        (-> @leihs-users* keys set))
        (map create-user)
        doall)
   (info "DONE create-users #" (-> @state* :users-created-count)))
@@ -125,9 +124,9 @@
           leihs-user (-> @leihs-users*
                          (get! org-id))
           to-be-updated-ks (filter
-                             #(not= (% source-user)
-                                    (% leihs-user))
-                             ks)]
+                            #(not= (% source-user)
+                                   (% leihs-user))
+                            ks)]
       ;(doseq [k ks] (info k (not= (get k source-user) (get k leihs-user))))
       ;(info {:org_id org-id :source-user source-user :leihs-user leihs-user :ks ks :to-be-updated-ks to-be-updated-ks})
       (when-let [data (some-> source-user (select-keys to-be-updated-ks)
@@ -167,7 +166,7 @@
 
 (defn delete-or-disable-users []
   (info "START delete-or-disable-users")
-  (doseq [org-id (set/difference (-> @leihs-users* keys set )
+  (doseq [org-id (set/difference (-> @leihs-users* keys set)
                                  (-> @nominal-users* keys set))]
     (let [leihs-user (get! @leihs-users* org-id)]
       ; do not delete account if it was used to sign-in (can't because of audits and more
@@ -203,7 +202,6 @@
 (defn stat-users []
   (swap! state* merge (users-total-enabled-disabled-count-stat)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def _all-users-group
@@ -226,7 +224,7 @@
                                  (-> @nominal-groups* keys set))]
     (info "DELETING GROUP" org-id)
     (let [group (leihs/delete-group
-                  @config* (:id (get @leihs-groups* org-id)))]
+                 @config* (:id (get @leihs-groups* org-id)))]
       (swap! leihs-groups* dissoc org-id))
     (swap! state* update-in [:groups-deleted-count] inc))
   (info "DONE delete-groups #" (-> @state* :groups-deleted-count)))
@@ -237,9 +235,9 @@
                                  (-> @leihs-groups* keys set))]
     (debug "create group" org-id)
     (let [group (leihs/create-group
-                  @config* (merge
-                             (get-in! @config* [prefix-key group-create-defaults-key])
-                             (get @nominal-groups* org-id)))]
+                 @config* (merge
+                           (get-in! @config* [prefix-key group-create-defaults-key])
+                           (get @nominal-groups* org-id)))]
       (swap! leihs-groups* assoc org-id group))
     (swap! state* update-in [:groups-created-count] inc))
   (info "DONE" 'create-groups))
@@ -253,9 +251,9 @@
           ks (-> nominal-group (dissoc :id) keys)
           leihs-group (get! @leihs-groups* org-id)
           to-be-updated-ks (filter
-                             #(not= (% nominal-group)
-                                    (% leihs-group))
-                             ks)]
+                            #(not= (% nominal-group)
+                                   (% leihs-group))
+                            ks)]
       ;(doseq [k ks] (info k (not= (get k nominal-group) (get k leihs-group))))
       ;(info {:id id :nominal-group nominal-group :leihs-group leihs-group :ks ks :to-be-updated-ks to-be-updated-ks})
       (when-let [data (some-> nominal-group
@@ -294,9 +292,8 @@
         (when (not= target-ids source-ids)
           (debug "UPDATE-GROUPS-USERS " org-id)
           (leihs/update-group-users
-            leihs-group-id @config* target-ids)
-          (swap! state* update-in [:groups-users-updated-count] inc)
-          ))))
+           leihs-group-id @config* target-ids)
+          (swap! state* update-in [:groups-users-updated-count] inc)))))
   (info "DONE update-groups-users #" (:groups-users-updated-count @state*)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -417,7 +414,6 @@
   (update-images)
   (stat-users)
   (info "STATE" @state*))
-
 
 ;(first @nominal-groups*)
 ;(first @nominal-users*)

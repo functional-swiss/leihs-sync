@@ -1,17 +1,12 @@
 (ns funswiss.leihs-sync.utils.obscurity
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clojure.string :as string]
-    [clojure.tools.logging :as logging]
-    [crypto.random :as cr]
-    [funswiss.leihs-sync.utils.core :refer [keyword presence str]]
-    [taoensso.timbre :as timbre :refer [debug info]]
-    )
-  (:import java.util.Base64)
-  )
-
-
-
+   [clojure.string :as string]
+   [clojure.tools.logging :as logging]
+   [crypto.random :as cr]
+   [funswiss.leihs-sync.utils.core :refer [keyword presence str]]
+   [taoensso.timbre :as timbre :refer [debug info]])
+  (:import java.util.Base64))
 
 (def SIZE 256)
 
@@ -26,8 +21,8 @@
 
 (defn byte-xor [b1 b2]
   (unchecked-byte
-    (bit-xor (Byte/toUnsignedLong b1)
-             (Byte/toUnsignedLong b2))))
+   (bit-xor (Byte/toUnsignedLong b1)
+            (Byte/toUnsignedLong b2))))
 
 (defn seq-xor [xs]
   (loop [xs xs
@@ -38,7 +33,6 @@
              (rest xr)
              (conj res (byte-xor s (first xr))))
       res)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
