@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WORKING_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
+
+cd $WORKING_DIR
+
+if [ ! -f ".transcrypt_key.txt" ]; then
+  echo ".transcrypt_key.txt is not present"
+  exit -1
+else
+  gpg -a --encrypt \
+      -r Thomas.Schank@functional.swiss \
+      -r matus.kmit@functional.swiss \
+      -r max.albrecht@functional.swiss \
+      ".transcrypt_key.txt"
+fi

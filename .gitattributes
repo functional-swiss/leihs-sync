@@ -1,4 +1,4 @@
-*.key filter=git-crypt diff=git-crypt
-*secret* filter=git-crypt diff=git-crypt
-secrets/** filter=git-crypt diff=git-crypt
-proto-config/** filter=git-crypt diff=git-crypt
+*.key filter=crypt diff=crypt merge=crypt
+*secret* filter=crypt diff=crypt merge=crypt
+secrets/** filter=crypt diff=crypt merge=crypt
+proto-config/** filter=crypt diff=crypt merge=crypt
