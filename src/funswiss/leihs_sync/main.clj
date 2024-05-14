@@ -1,28 +1,27 @@
 (ns funswiss.leihs-sync.main
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clojure.pprint :refer [pprint]]
-    [clojure.tools.cli :as cli]
-    [clojure.set :as set]
-    [clj-yaml.core :as yaml]
-    [clojure.string :as string]
-    [funswiss.leihs-sync.leihs.core :as leihs-core]
-    [funswiss.leihs-sync.ms.core :as ms-core]
-    [funswiss.leihs-sync.sync.core :as sync-core]
-    [funswiss.leihs-sync.utils.cli-options :as cli-opts]
-    [funswiss.leihs-sync.utils.core :refer [deep-merge-limited keyword presence str get! get-in!]]
-    [funswiss.leihs-sync.utils.logging :as service-logging]
-    [funswiss.leihs-sync.utils.repl :as repl]
-    [funswiss.leihs-sync.zabbix-sender :as zabbix-sender]
-    [logbug.thrown :as thrown]
-    [taoensso.timbre :as logging :refer [debug info spy]]
-    [taoensso.timbre.tools.logging]
-    [zhdk.prtg :as prtg]
-    [zhdk.zapi.core :as zapi-core])
+   [clj-yaml.core :as yaml]
+   [clojure.pprint :refer [pprint]]
+   [clojure.set :as set]
+   [clojure.string :as string]
+   [clojure.tools.cli :as cli]
+   [funswiss.leihs-sync.leihs.core :as leihs-core]
+   [funswiss.leihs-sync.ms.core :as ms-core]
+   [funswiss.leihs-sync.sync.core :as sync-core]
+   [funswiss.leihs-sync.utils.cli-options :as cli-opts]
+   [funswiss.leihs-sync.utils.core :refer [deep-merge-limited keyword presence str get! get-in!]]
+   [funswiss.leihs-sync.utils.logging :as service-logging]
+   [funswiss.leihs-sync.utils.repl :as repl]
+   [funswiss.leihs-sync.zabbix-sender :as zabbix-sender]
+   [logbug.thrown :as thrown]
+   [taoensso.timbre :as logging :refer [debug info spy]]
+   [taoensso.timbre.tools.logging]
+   [zhdk.prtg :as prtg]
+   [zhdk.zapi.core :as zapi-core])
   (:import
-    [java.time LocalDateTime Instant])
+   [java.time LocalDateTime Instant])
   (:gen-class))
-
 
 (thrown/reset-ns-filter-regex #"^(funswiss|zhdk)\..*")
 
@@ -42,24 +41,24 @@
   (let [version (version-info)
         commit-id (-> version :commit-id (#(subs % 0 (min 7 (count %)))))]
     (str "Build: " (:build-timestamp version) " "
-         "URL: " REPO "/commit/" commit-id )))
+         "URL: " REPO "/commit/" commit-id)))
 
 (def cli-options
   (concat
-    [["-h" "--help"]
-     ["-d" "--dev" "DEV mode, does not exit"]
-     ["-c" (cli-opts/long-opt-for-key config-file-key)
-      "YAML configuration file."]
-     [nil (cli-opts/long-opt-for-key write-config-file-key)
-      (->> [ "Write out the merged configuration from defaults, "
-            " config-file and command-line config; then exit."]
-           (string/join "\n"))
-      :default nil]
-     ["-l" (cli-opts/long-opt-for-key service-logging/logging-config-file-key)
-      "Additional configuration file(s) for logging. See also https://github.com/ptaoussanis/timbre#configuration."
-      :default []
-      :update-fn conj]
-     ["-v" "--version"]]))
+   [["-h" "--help"]
+    ["-d" "--dev" "DEV mode, does not exit"]
+    ["-c" (cli-opts/long-opt-for-key config-file-key)
+     "YAML configuration file."]
+    [nil (cli-opts/long-opt-for-key write-config-file-key)
+     (->> ["Write out the merged configuration from defaults, "
+           " config-file and command-line config; then exit."]
+          (string/join "\n"))
+     :default nil]
+    ["-l" (cli-opts/long-opt-for-key service-logging/logging-config-file-key)
+     "Additional configuration file(s) for logging. See also https://github.com/ptaoussanis/timbre#configuration."
+     :default []
+     :update-fn conj]
+    ["-v" "--version"]]))
 
 (defn main-usage [options-summary & more]
   (->> ["add-leihs-sync"
@@ -83,13 +82,12 @@
 
 (def default-config
   (sorted-map
-    sync-core/prefix-key sync-core/config-defaults
-    ms-core/prefix-key ms-core/config-defaults
-    repl/prefix-key repl/config-defaults
-    leihs-core/prefix-key leihs-core/config-defaults
-    zapi-core/prefix-key zapi-core/config-defaults
-    zabbix-sender/prefix-key zabbix-sender/config-defaults
-    ))
+   sync-core/prefix-key sync-core/config-defaults
+   ms-core/prefix-key ms-core/config-defaults
+   repl/prefix-key repl/config-defaults
+   leihs-core/prefix-key leihs-core/config-defaults
+   zapi-core/prefix-key zapi-core/config-defaults
+   zabbix-sender/prefix-key zabbix-sender/config-defaults))
 
 (def config* (atom default-config))
 
@@ -111,17 +109,17 @@
                  {}))
       (cond
         (:help
-          options) (println
-                     (main-usage summary {:args args :options options})
-                     "\n\n"
-                     "config: " @config*)
+         options) (println
+                   (main-usage summary {:args args :options options})
+                   "\n\n"
+                   "config: " @config*)
         (:version
-          options) (println (version-str))
+         options) (println (version-str))
         (write-config-file-key
-          options) (spit (write-config-file-key options)
-                         (yaml/generate-string
-                           @config*
-                           :dumper-options {:flow-style :block}))
+         options) (spit (write-config-file-key options)
+                        (yaml/generate-string
+                         @config*
+                         :dumper-options {:flow-style :block}))
         :else (do (logging/debug 'CONFIG @config*)
                   (repl/init @config*)
                   (service-logging/init options)
@@ -131,8 +129,7 @@
                   (sync-core/start @config*)
                   (when-let [prtg-url (get @config* :prtg-url)]
                     (prtg/send-success prtg-url @sync-core/state*))
-                  (zabbix-sender/send-success @config* @sync-core/state*)
-                  ))
+                  (zabbix-sender/send-success @config* @sync-core/state*)))
       (catch Throwable th
         (reset! exception* th)
         (logging/error (thrown/stringify th))
@@ -143,14 +140,12 @@
     (when-not (:dev options)
       (System/exit 0))))
 
-
 (defonce args* (atom nil))
 (when @args* (main @args*))
 
 (defn -main [& args]
   (reset! args* args)
   (main args))
-
 
 ;(-main "-d" "-c" "tmp/local-functional-test-config.secret.yml" "-h")
 ;(-main "-d" "--write-config-file" "config.yml")

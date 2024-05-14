@@ -1,19 +1,17 @@
 (ns zhdk.zapi.core
   (:refer-clojure :exclude [str keyword])
   (:require
-    [clj-http.client :as http-client]
-    [funswiss.leihs-sync.utils.core :refer [deep-merge keyword presence str get! get-in!]]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.thrown :as thrown]
-    [taoensso.timbre :as logging]
-    [zhdk.zapi.user-mapping :as user-mapping])
+   [clj-http.client :as http-client]
+   [funswiss.leihs-sync.utils.core :refer [deep-merge keyword presence str get! get-in!]]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I>]]
+   [logbug.thrown :as thrown]
+   [taoensso.timbre :as logging]
+   [zhdk.zapi.user-mapping :as user-mapping])
   (:import
-    [java.util Base64]))
-
+   [java.util Base64]))
 
 (def BASE-URL "https://zapi.zhdk.ch/v2")
-
 
 (def prefix-key :zapi)
 (def token-keys [prefix-key :token])
@@ -21,8 +19,8 @@
 
 (def config-defaults
   (sorted-map
-    (last token-keys) "TODO"
-    (last page-limit-keys) 100))
+   (last token-keys) "TODO"
+   (last page-limit-keys) 100))
 
 (defn seq->map [k xs]
   (zipmap (map k xs) xs))
@@ -37,7 +35,7 @@
         "photo"
         "photos_badge"
         "user_group"]
-       (clojure.string/join "," )))
+       (clojure.string/join ",")))
 
 (defn- get-people-page-data [page config]
   (let [token (get-in! config token-keys)
@@ -53,11 +51,11 @@
                       ;:last_name "kmit"
                       }]
     (-> (http-client/get
-          (str BASE-URL "/person/")
-          {:query-params query-params
-           :accept :json
-           :as :json
-           :basic-auth [token ""]})
+         (str BASE-URL "/person/")
+         {:query-params query-params
+          :accept :json
+          :as :json
+          :basic-auth [token ""]})
         :body :data)))
 
 (defn- get-people [config]
@@ -84,26 +82,25 @@
   (logging/info "DONE zapi/users #" (count @users*))
   @users*)
 
-
 ;#### photo ###################################################################
 
 (defn photo [org-id config]
   (let [token (get-in! config token-keys)
         url (-> @users* (get! org-id) :zapi_img_url)]
     (try (-> (http-client/get
-               url
-               {:accept :json
-                :as :json
-                :basic-auth [token ""]})
+              url
+              {:accept :json
+               :as :json
+               :basic-auth [token ""]})
              :body
              :file_content_base64
              (.getBytes "UTF-8")
              (#(.decode (Base64/getDecoder) %)))
          (catch Exception e
            (throw (ex-info
-                    "ZAPI get-photo error"
-                    {:url url
-                     :org-id org-id} e))))))
+                   "ZAPI get-photo error"
+                   {:url url
+                    :org-id org-id} e))))))
 
 (defn photo-digest [org-id]
   (-> @users* (get! org-id) :img_digest))
@@ -116,18 +113,18 @@
         query-params {:offset (* page page-limit)
                       :limit page-limit}]
     (-> (http-client/get
-          (str BASE-URL "/user-group/")
-          {:query-params query-params
-           :accept :json
-           :as :json
-           :basic-auth [token ""]})
+         (str BASE-URL "/user-group/")
+         {:query-params query-params
+          :accept :json
+          :as :json
+          :basic-auth [token ""]})
         :body :data)))
 
 (defn get-user-groups [config]
   (loop [data [] page 0]
     (if-let [more-data (seq (get-user-groups-page-data page config))]
       (recur (concat data more-data) (inc page))
-      data )))
+      data)))
 
 (defn zapi-user-group->leihs-attributes [user-group]
   {:org_id (-> user-group (get! :id) str)
@@ -149,7 +146,6 @@
   @groups*)
 
 ;#### group users #############################################################
-
 
 (defn person-group-ids [person]
   (->> person
@@ -175,7 +171,6 @@
 (defn group-users [org-id config]
   (set-group-users!)
   (get @group-users* org-id #{}))
-
 
 ;#### debug ###################################################################
 ;(logging-config/set-logger! :level :debug)

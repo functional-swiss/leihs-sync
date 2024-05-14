@@ -1,13 +1,12 @@
 (ns zhdk.zapi.user-mapping
   (:refer-clojure :exclude [str keyword])
   (:require
-    [funswiss.leihs-sync.utils.core :refer [deep-merge keyword presence str get! get-in!]]
-    [cheshire.core :as cheshire]
-    [logbug.catcher :as catcher]
-    [logbug.debug :as debug :refer [I>]]
-    [logbug.thrown :as thrown]
-    [taoensso.timbre.tools.logging]
-    ))
+   [cheshire.core :as cheshire]
+   [funswiss.leihs-sync.utils.core :refer [deep-merge keyword presence str get! get-in!]]
+   [logbug.catcher :as catcher]
+   [logbug.debug :as debug :refer [I>]]
+   [logbug.thrown :as thrown]
+   [taoensso.timbre.tools.logging]))
 
 (def de-iso-codes
   (-> "iso-codes-de.json"
