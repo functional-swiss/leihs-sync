@@ -21,9 +21,12 @@
 (taoensso.timbre.tools.logging/use-timbre)
 
 (def config-defaults
-  {:min-level [[#{""} :debug]
-               [#{"funswiss.*"} :info]
-               [#{"*" :warn}]]})
+  {:min-level [[#{} :debug]
+               [#{"funswiss.*" "zhdk.*"} :info]
+               [#{"*"} :warn]
+               ]})
+              
+; TODO fix this
 
 (timbre/merge-config! config-defaults)
 
