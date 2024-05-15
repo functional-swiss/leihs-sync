@@ -29,20 +29,25 @@
 
 (def user-disable-properties-key :user-disable-properties)
 (def user-disable-properties {:account_enabled false
-                              :address nil
-                              :badge_id nil
-                              :city nil
-                              :country nil
-                              :email nil
-                              :extended_info nil
-                              :firstname nil
-                              :img_digest nil
-                              :lastname nil
-                              :login nil
-                              :phone nil
-                              :secondary_email nil
-                              :url nil
-                              :zip nil})
+                              :password_sign_in_enabled false})
+
+(def user-anonymize-properties-key :user-anonymize-properties)
+(def user-anonymize-properties {:account_enabled false
+                                :address nil
+                                :badge_id nil
+                                :city nil
+                                :country nil
+                                :email nil
+                                :extended_info nil
+                                :firstname nil
+                                :img_digest nil
+                                :lastname nil
+                                :login nil
+                                :password_sign_in_enabled false
+                                :phone nil
+                                :secondary_email nil
+                                :url nil
+                                :zip nil})
 
 (def group-filter-blacklist-regexes-key :group-filter-blacklist-regexes)
 (def group-filter-blacklist-regexes-default [])
@@ -61,23 +66,26 @@
    group-update-defaults-key {}
    user-create-defaults-key {}
    user-disable-properties-key user-disable-properties
+   user-anonymize-properties-key user-anonymize-properties
    user-update-defaults-key {}
    organization-key "TODO"
    source-key "ms"
    user-photo-mode-key user-photo-mode-default))
 
 (def initial-state
-  {:errors []
+  (sorted-map
+   :errors []
    :groups-created-count 0
    :groups-deleted-count 0
    :groups-updated-count 0
    :groups-users-updated-count 0
+   :users-anonymized-count 0
    :users-created-count 0
    :users-deleted-count 0
    :users-disabled-count 0
    :users-photos-checked 0
    :users-photos-updated 0
-   :users-updated-count 0})
+   :users-updated-count 0))
 
 (defonce state* (atom initial-state))
 
@@ -144,8 +152,13 @@
            :img256_url nil
            :img32_url nil)))
 
-(defn disable-user [leihs-user]
-  (let [properties (get-in! @config* [prefix-key user-disable-properties-key])
+(defn anonymize-or-disable-user
+  "Anonymize the user if it has no open contracts otherwise disable the user"
+  [leihs-user]
+  (let [anonymize (= 0 (:open_contracts_count leihs-user))
+        properties (get-in! @config* [prefix-key (if anonymize
+                                                   user-anonymize-properties-key
+                                                   user-disable-properties-key)])
         ks (keys properties)
         org-id (:org_id leihs-user)
         to-be-updated-ks (filter #(not= (% properties)
@@ -157,35 +170,36 @@
       (debug 'DISABLING org-id data)
       (leihs/update-user @config* (:id leihs-user) data)
       (swap! leihs-users* update-in [org-id] #(merge % data))
-      (swap! state* update-in [:users-disabled-count] inc))))
+      (swap! state* update-in (if anonymize
+                                [:users-anonymized-count]
+                                [:users-disabled-count]) inc))))
 
 (defn delete-user [leihs-user]
   (leihs/delete-user @config* (:id leihs-user))
   (swap! leihs-users* dissoc (:org_id leihs-user))
   (swap! state* update-in [:users-deleted-count] inc))
 
-(defn delete-or-disable-users []
-  (info "START delete-or-disable-users")
+(defn delete-or-anonymize-or-disable-users []
+  (info "START delete-or-anonymize-or-disable-users")
   (doseq [org-id (set/difference (-> @leihs-users* keys set)
                                  (-> @nominal-users* keys set))]
     (let [leihs-user (get! @leihs-users* org-id)]
-      ; do not delete account if it was used to sign-in (can't because of audits and more
-      ; always disable if has been disabled before (see catch below)
       (if (or (:last_sign_in_at leihs-user)
-              (-> :account_enabled leihs-user not))
-        (disable-user leihs-user)
-        ; there are a few corner cases where :last_sign_in_at is not sufficient
-        ; to determe if an account can be deleted
+              (< 0 (:open_contracts_count leihs-user))
+              (< 0 (:closed_contracts_count leihs-user)))
+        (anonymize-or-disable-user leihs-user)
         (try (delete-user leihs-user)
              (catch ExceptionInfo e
                (if (contains? #{409 422}
                               (some-> e ex-data :status))
-                 (disable-user leihs-user)
+                 (anonymize-or-disable-user leihs-user)
                  (do (warn "Deleting user-account "
                            leihs-user " failed with"
                            (str (.getMessage e)))
                      (throw e))))))))
-  (info "DONE delete-or-disable-users deleted: " (-> @state* :users-deleted-count)
+  (info "DONE delete-or-anonymize-or-disable-users"
+        " anonymized: " (-> @state* :users-anonymized-count)
+        ", deleted: " (-> @state* :users-deleted-count)
         ", disabled: " (-> @state* :users-disabled-count)))
 
 (defn users-total-enabled-disabled-count-stat []
@@ -404,7 +418,7 @@
   (reset! nominal-groups* (nominal-groups config))
   (reset! leihs-users* (leihs/users config))
   (reset! leihs-groups* (leihs/groups config))
-  (delete-or-disable-users)
+  (delete-or-anonymize-or-disable-users)
   (create-users)
   (update-users)
   (delete-groups)

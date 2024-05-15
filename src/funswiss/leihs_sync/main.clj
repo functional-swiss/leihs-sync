@@ -15,7 +15,7 @@
    [funswiss.leihs-sync.utils.repl :as repl]
    [funswiss.leihs-sync.zabbix-sender :as zabbix-sender]
    [logbug.thrown :as thrown]
-   [taoensso.timbre :as logging :refer [debug info spy]]
+   [taoensso.timbre :as logging :refer [error warn debug info spy]]
    [taoensso.timbre.tools.logging]
    [zhdk.prtg :as prtg]
    [zhdk.zapi.core :as zapi-core])
@@ -132,7 +132,7 @@
                   (zabbix-sender/send-success @config* @sync-core/state*)))
       (catch Throwable th
         (reset! exception* th)
-        (logging/error (thrown/stringify th))
+        (logging/fatal (thrown/stringify th))
         (when-let [prtg-url (get @config* :prtg-url)]
           (prtg/send-error prtg-url th))
         (when-not (:dev options)
@@ -149,8 +149,6 @@
 
 ;(-main "-d" "-c" "tmp/local-functional-test-config.secret.yml" "-h")
 ;(-main "-d" "--write-config-file" "config.yml")
-;(logging/merge-config! {:min-level :debug})
-
 ;(-main "-h")
 ;(-main "-d" "-c" "local-functional-test-config.secret.yml" "run")
 

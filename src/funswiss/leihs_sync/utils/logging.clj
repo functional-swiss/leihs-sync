@@ -23,9 +23,8 @@
 (def config-defaults
   {:min-level [[#{} :debug]
                [#{"funswiss.*" "zhdk.*"} :info]
-               [#{"*"} :warn]
-               ]})
-              
+               [#{"*"} :warn]]})
+
 ; TODO fix this
 
 (timbre/merge-config! config-defaults)
