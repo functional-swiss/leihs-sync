@@ -25,6 +25,16 @@
    base-url-key "http://localhost:3200"
    token-key "TODO"))
 
+(defn request-base [config]
+  (as-> {:accept :json
+         :as :json} req
+    (if-let [token (get-in! config [prefix-key token-key])]
+      (assoc-in req [:headers :authorization] (str "token " token))
+      req)
+    (if-let [base-url (get-in! config [prefix-key base-url-key])]
+      (assoc req :url base-url)
+      req)))
+
 (def user-keys-read
   #{:account_disabled_at
     :account_enabled
@@ -62,9 +72,7 @@
       (conj :img256_url :img32_url)))
 
 (defn request-users [config]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])
-        fields (disj user-keys-read :img32_url :img256_url)
+  (let [fields (disj user-keys-read :img32_url :img256_url)
         query {:per-page 1000
                :fields (cheshire/generate-string fields)
                :account_enabled ""
@@ -72,14 +80,13 @@
     (loop
      [page 1
       users []]
-      (if-let [more-users (seq (-> (http-client/get
-                                    (str base-url "/admin/users/")
-                                    {:query-params
-                                     (assoc query :page page)
-                                     :accept :json
-                                     :as :json
-                                     :basic-auth [token ""]})
-                                   :body :users))]
+     (if-let [more-users (-> config request-base
+                             (update-in [:url] #(str % "/admin/users/"))
+                             (assoc :method :get
+                                    :query-params (assoc query :page page))
+                             http-client/request
+                             :body :users
+                             seq)]
         (recur (inc page)
                (concat users more-users))
         users))))
@@ -93,19 +100,17 @@
     users))
 
 (defn create-user [config user]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])
-        body (-> user
+  (let [body (-> user
                  keywordize-keys
                  (select-keys user-keys-writeable)
                  cheshire/generate-string)]
-    (try (-> (str base-url "/admin/users/")
-             (http-client/post
-              {:accept :json
-               :as :json
-               :content-type :json
-               :basic-auth [token ""]
-               :body body})
+    (try (-> config
+             request-base
+             (update-in [:url] #(str % "/admin/users/"))
+             (assoc :method :post
+                    :content-type :json
+                    :body body)
+             http-client/request
              :body)
          (catch Exception ex
            (error "create-user faild" {:body body})
@@ -113,34 +118,30 @@
 
 (defn update-user [config id data]
   (logging/debug 'update-user config id data)
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])
-        url (str base-url "/admin/users/" id)
-        req {:url url
-             :method :patch
-             :accept :json
-             :as :json
-             :content-type :json
-             :body (-> data
-                       keywordize-keys
-                       (select-keys user-keys-writeable)
-                       cheshire/generate-string)}]
-    (try (-> req
-             (assoc :basic-auth [token ""])
-             http-client/request
-             :body)
-         (catch Throwable e
-           (error "update-user failed " req)
-           (throw e)))))
+  (try (-> config
+           request-base
+           (update-in [:url] #(str % "/admin/users/" id))
+           (assoc :method :patch
+                  :content-type :json
+                  :body (-> data
+                            keywordize-keys
+                            (select-keys user-keys-writeable)
+                            cheshire/generate-string))
+           http-client/request
+           :body)
+       (catch Throwable e
+         (error "update-user failed " id data)
+         (throw e))))
 
 (defn delete-user [config id]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])]
-    (-> (str base-url "/admin/users/" id)
-        (http-client/delete
-         {:accept :json
-          :basic-auth [token ""]
-          :throw-entire-message? true}))))
+  (http-client/delete
+   (-> config
+       request-base
+       (update-in [:url] #(str % "/admin/users/" id))
+       (assoc
+        :method :delete
+        :throw-entire-message? true)
+       http-client/request)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -157,9 +158,7 @@
   (disj group-keys-read :id))
 
 (defn request-groups [config]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])
-        fields group-keys-read
+  (let [fields group-keys-read
         query {:per-page 1000
                :fields (cheshire/generate-string fields)
                :account_enabled ""
@@ -167,14 +166,15 @@
     (loop
      [page 1
       groups []]
-      (if-let [more-groups (seq (-> (http-client/get
-                                     (str base-url "/admin/groups/")
-                                     {:query-params
-                                      (assoc query :page page)
-                                      :accept :json
-                                      :as :json
-                                      :basic-auth [token ""]})
-                                    :body :groups))]
+     (if-let [more-groups (-> config
+                              request-base
+                              (update-in [:url] #(str % "/admin/groups/"))
+                              (assoc :method :get
+                                     :query-params
+                                     (assoc query :page page))
+                              http-client/request
+                              :body :groups
+                              seq)]
         (recur (inc page)
                (concat groups more-groups))
         groups))))
@@ -188,72 +188,69 @@
     groups))
 
 (defn create-group [config group]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])]
-    (-> (str base-url "/admin/groups/")
-        (http-client/post
-         {:accept :json
-          :as :json
-          :content-type :json
-          :basic-auth [token ""]
-          :body (-> group
-                    keywordize-keys
-                    (select-keys group-keys-writeable)
-                    cheshire/generate-string)})
-        :body)))
+  (try (-> config
+           request-base
+           (update-in [:url] #(str % "/admin/groups/"))
+           (assoc :method :post
+                  :content-type :json
+                  :body (-> group
+                            keywordize-keys
+                            (select-keys group-keys-writeable)
+                            cheshire/generate-string))
+           http-client/request
+           :body)
+       (catch Exception ex
+         (error "create-group failed" {:group group})
+         (throw ex))))
 
 (defn update-group [config id data]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])]
-    (-> (str base-url "/admin/groups/" id)
-        (http-client/patch
-         {:accept :json
-          :as :json
-          :content-type :json
-          :basic-auth [token ""]
-          :body (-> data
-                    keywordize-keys
-                    (select-keys group-keys-writeable)
-                    cheshire/generate-string)})
-        :body)))
+  (try (-> config
+           request-base
+           (update-in [:url] #(str % "/admin/groups/" id))
+           (assoc :method :patch
+                  :content-type :json
+                  :body (-> data
+                            keywordize-keys
+                            (select-keys group-keys-writeable)
+                            cheshire/generate-string))
+           http-client/request
+           :body)
+       (catch Throwable e
+         (error "update-group failed" {:id id :data data})
+         (throw e))))
 
 (defn delete-group [config id]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])]
-    (-> (str base-url "/admin/groups/" id)
-        (http-client/delete
-         {:accept :json
-          :basic-auth [token ""]}))))
+  (try (-> config
+           request-base
+           (update-in [:url] #(str % "/admin/groups/" id))
+           (assoc :method :delete)
+           http-client/request)
+       (catch Throwable e
+         (error "delete-group failed" {:id id})
+         (throw e))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn group-users [id config]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])
-        query {:per-page 1000}]
-    (loop
-     [page 1
-      users []]
-      (if-let [more-users (seq (-> (http-client/get
-                                    (str base-url "/admin/groups/" id "/users/")
-                                    {:query-params
-                                     (assoc query :page page)
-                                     :accept :json
-                                     :as :json
-                                     :basic-auth [token ""]})
-                                   :body :users))]
-        (recur (inc page)
-               (concat users more-users))
-        users))))
+  (loop
+    [page 1
+     users []]
+    (if-let [more-users (-> config request-base
+                            (update-in [:url] #(str % "/admin/groups/" id "/users/"))
+                            (assoc :method :get
+                                   :query-params {:per-page 1000 :page page})
+                            http-client/request
+                            :body :users
+                            seq)]
+      (recur (inc page)
+             (concat users more-users))
+      users)))
 
 (defn update-group-users [id config ids]
-  (let [base-url (get-in! config [prefix-key base-url-key])
-        token (get-in! config [prefix-key token-key])]
-    (http-client/put
-     (str base-url "/admin/groups/" id "/users/")
-     {:accept :json
-      :content-type :json
-      :as :json
-      :basic-auth [token ""]
-      :body (cheshire/generate-string
-             {:ids ids})})))
+  (-> config request-base
+      (update-in [:url] #(str % "/admin/groups/" id "/users/"))
+      (assoc :method :put
+             :content-type :json
+             :body (cheshire/generate-string {:ids ids}))
+      http-client/request))
