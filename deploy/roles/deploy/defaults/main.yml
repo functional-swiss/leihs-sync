@@ -1,3 +1,4 @@
+local_leihs_sync_dir: '{{playbook_dir}}/../leihs-sync'
 app_name: 'leihs-{{leihs_sync_name}}-sync'
 app_user: '{{app_name}}'
 app_dir: '/{{app_name}}'

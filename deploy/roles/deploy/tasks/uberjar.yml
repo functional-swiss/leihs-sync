@@ -4,12 +4,12 @@
     executable: /bin/bash
   shell: |
     #!/usr/bin/env bash
-    set -euxo
-    cd {{playbook_dir}}/..
+    set -euo pipefail
+    cd {{local_leihs_sync_dir}}
     ./bin/clj-uberjar
 
 - name: copy uberjar
   copy:
-    src: '{{playbook_dir}}/../leihs-sync.jar'
+    src: '{{role_path}}/../../../leihs-sync.jar'
     dest: '{{app_dir}}/leihs-sync.jar'
     owner: '{{app_user}}'

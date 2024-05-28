@@ -2,36 +2,39 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
+PROJECT_NAME='leihs-sync'
+JAR_NAME="${PROJECT_NAME}.jar"
+TMP_DIR="${PROJECT_DIR}/tmp"
+
+mkdir -p $TMP_DIR
 
 cd $PROJECT_DIR
 ./bin/env/java-setup
 ./bin/env/clojure-setup
-
-PROJECT_NAME='leihs-sync'
-JAR_NAME="${PROJECT_NAME}.jar"
-DIGEST="$(git -C "$PROJECT_DIR" log -n 1 HEAD --pretty=%T)"
-LOCAL_CACHE_DIR="${LOCAL_CACHE_DIR:-"${TMPDIR:-/tmp/}build-cache"}"
-LOCAL_CACHED_ARTEFACT_PATH="${LOCAL_CACHE_DIR}/${PROJECT_NAME}_${DIGEST}.jar"
-
-if $(git -C $PROJECT_DIR diff --quiet); then
-  BUILD_CACHE_DISABLED="${BUILD_CACHE_DISABLED:-NO}"
-else
-  BUILD_CACHE_DISABLED="YES"
-fi
 
 function build {
   ./bin/version
   clojure -T:build uber
 }
 
-if [ $BUILD_CACHE_DISABLED == "YES" ]; then
+rm -f $PROJECT_DIR/$JAR_NAME
+
+if [[ -n $(git status -s) ]]; then
+  echo "WARNING: project is dirty, rebuilding regular jar"
   build
 else
-  if [ -e $LOCAL_CACHED_ARTEFACT_PATH ]; then
-    echo "INFO: locally cached jar found"
-    cp $LOCAL_CACHED_ARTEFACT_PATH $PROJECT_DIR/$JAR_NAME
+  DIGEST="$(git -C "$PROJECT_DIR" log -n 1 HEAD --pretty=%T)"
+  CACHED_JAR="${TMP_DIR}/${PROJECT_NAME}_${DIGEST}.jar"
+  if [[ -e  "$CACHED_JAR" ]]; then
+    echo "using cached jar"
+    touch $CACHED_JAR
   else
+    echo "building jar"
     build
-    cp $PROJECT_DIR/$JAR_NAME $LOCAL_CACHED_ARTEFACT_PATH
+    mv $PROJECT_DIR/$JAR_NAME $CACHED_JAR
   fi
+  ln -s "$CACHED_JAR" "$PROJECT_DIR/$JAR_NAME"
 fi
+
+# cleanup old jars
+find $PROJECT_DIR/tmp -type f -name "${PROJECT_NAME}_*.jar" -mtime +7 -exec rm -f {} \;
