@@ -173,7 +173,9 @@
       ; do not delete account if it was used to sign-in (can't because of audits and more
       ; always disable if has been disabled before (see catch below)
       (if (or (:last_sign_in_at leihs-user)
-              (-> :account_enabled leihs-user not))
+              (-> :account_enabled leihs-user not)
+              (< 0 (:open_contracts_count leihs-user))
+              (< 0 (:closed_contracts_count leihs-user)))
         (disable-user leihs-user)
         ; there are a few corner cases where :last_sign_in_at is not sufficient
         ; to determe if an account can be deleted
