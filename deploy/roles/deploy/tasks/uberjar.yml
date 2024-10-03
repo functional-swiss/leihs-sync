@@ -1,5 +1,6 @@
 - name: create uberjar
   delegate_to: localhost
+  run_once: true
   args:
     executable: /bin/bash
   shell: |
