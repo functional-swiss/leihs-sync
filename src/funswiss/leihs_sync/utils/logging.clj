@@ -21,12 +21,11 @@
 (taoensso.timbre.tools.logging/use-timbre)
 
 (def config-defaults
-  {:min-level [[#{} :debug]
+  {:min-level [[#{;"funswiss.leihs-sync.leihs.core"
+                  ;"funswiss.leihs-sync.sync.core"
+                  }:debug]
                [#{"funswiss.*" "zhdk.*"} :info]
-               [#{"*"} :warn]
-               ]})
-              
-; TODO fix this
+               [#{"*"} :warn]]})
 
 (timbre/merge-config! config-defaults)
 

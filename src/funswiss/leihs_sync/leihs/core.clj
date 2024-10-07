@@ -80,13 +80,13 @@
     (loop
      [page 1
       users []]
-     (if-let [more-users (-> config request-base
-                             (update-in [:url] #(str % "/admin/users/"))
-                             (assoc :method :get
-                                    :query-params (assoc query :page page))
-                             http-client/request
-                             :body :users
-                             seq)]
+      (if-let [more-users (-> config request-base
+                              (update-in [:url] #(str % "/admin/users/"))
+                              (assoc :method :get
+                                     :query-params (assoc query :page page))
+                              http-client/request
+                              :body :users
+                              seq)]
         (recur (inc page)
                (concat users more-users))
         users))))
@@ -134,14 +134,13 @@
          (throw e))))
 
 (defn delete-user [config id]
-  (http-client/delete
-   (-> config
-       request-base
-       (update-in [:url] #(str % "/admin/users/" id))
-       (assoc
-        :method :delete
-        :throw-entire-message? true)
-       http-client/request)))
+  (-> config
+      request-base
+      (update-in [:url] #(str % "/admin/users/" id))
+      (assoc
+       :method :delete
+       :throw-entire-message? true)
+      http-client/request))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -166,15 +165,15 @@
     (loop
      [page 1
       groups []]
-     (if-let [more-groups (-> config
-                              request-base
-                              (update-in [:url] #(str % "/admin/groups/"))
-                              (assoc :method :get
-                                     :query-params
-                                     (assoc query :page page))
-                              http-client/request
-                              :body :groups
-                              seq)]
+      (if-let [more-groups (-> config
+                               request-base
+                               (update-in [:url] #(str % "/admin/groups/"))
+                               (assoc :method :get
+                                      :query-params
+                                      (assoc query :page page))
+                               http-client/request
+                               :body :groups
+                               seq)]
         (recur (inc page)
                (concat groups more-groups))
         groups))))
@@ -229,13 +228,12 @@
          (error "delete-group failed" {:id id})
          (throw e))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn group-users [id config]
   (loop
-    [page 1
-     users []]
+   [page 1
+    users []]
     (if-let [more-users (-> config request-base
                             (update-in [:url] #(str % "/admin/groups/" id "/users/"))
                             (assoc :method :get

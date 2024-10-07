@@ -160,6 +160,7 @@
       (swap! state* update-in [:users-disabled-count] inc))))
 
 (defn delete-user [leihs-user]
+  (debug 'delete-user leihs-user)
   (leihs/delete-user @config* (:id leihs-user))
   (swap! leihs-users* dissoc (:org_id leihs-user))
   (swap! state* update-in [:users-deleted-count] inc))
