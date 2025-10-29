@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x
 
 PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && pwd -P)"
 PROJECT_NAME='leihs-sync'
@@ -9,8 +10,6 @@ TMP_DIR="${PROJECT_DIR}/tmp"
 mkdir -p $TMP_DIR
 
 cd $PROJECT_DIR
-./bin/env/java-setup
-./bin/env/clojure-setup
 
 function build {
   ./bin/version

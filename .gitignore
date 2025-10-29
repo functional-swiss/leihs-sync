@@ -6,3 +6,4 @@ config.yml
 resources/version.yml
 target/
 tmp/
+.vscode/
