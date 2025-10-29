@@ -31,6 +31,8 @@
      :city (get-zapi-field zapi-person [:personal_contact :city])
      :country (when country-code (get de-iso-codes country-code))
      :email (get-zapi-field zapi-person [:account :email])
+     ; check there is also [:business_contact :email]
+     :secondary_email (get-zapi-field zapi-person [:personal_contact :email_private])
      :extended_info nil
      :firstname (get-zapi-field zapi-person [:basic :first_name])
      :zapi_img_url (get-zapi-field zapi-person [:photos_badge :photos 0 :resource_link :links :self])
