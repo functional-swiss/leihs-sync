@@ -8,7 +8,6 @@
   template:
     src: '{{config_file}}'
     dest: '{{config_file_target}}'
-    mode: 0640
-    owner: root
+    mode: 0600
+    owner: '{{app_user}}'
     group: '{{app_user}}'
-
