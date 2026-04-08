@@ -21,15 +21,10 @@
 (defn zapi-person->leihs-attributes [zapi-person]
   (let [evento-id (:id zapi-person)
         country-code (get-zapi-field zapi-person [:personal_contact :country_code])]
-    {:address (->> [:address1 :address2]
-                   (map #(some-> zapi-person
-                                 (get-in [:personal_contact %])
-                                 presence))
-                   (filter identity)
-                   (clojure.string/join ", "))
+    {:address nil
      :badge_id (get-zapi-field zapi-person [:account :badge_number])
-     :city (get-zapi-field zapi-person [:personal_contact :city])
-     :country (when country-code (get de-iso-codes country-code))
+     :city nil
+     :country nil
      :email (get-zapi-field zapi-person [:account :email])
      ; check there is also [:business_contact :email]
      :secondary_email (get-zapi-field zapi-person [:personal_contact :email_private])
@@ -40,17 +35,7 @@
      :lastname (get-zapi-field zapi-person [:basic :last_name])
      :login (get-zapi-field zapi-person [:account :user_name])
      :org_id (str evento-id)
-     :phone (or (get-zapi-field zapi-person [:business_contact :phone_business])
-                (get-zapi-field zapi-person [:personal_contact :phone_business])
-                (get-zapi-field zapi-person [:personal_contact :phone_mobile])
-                (get-zapi-field zapi-person [:personal_contact :phone_private])
-                (some-> zapi-person
-                        (get-in [:personal_contact :phone_organizational])
-                        first presence))
+     :phone nil
      :url (get-zapi-field zapi-person [:basic :url])
-     :zip (->> [country-code
-                (get-zapi-field zapi-person [:personal_contact :zip])]
-               (map presence)
-               (filter identity)
-               (clojure.string/join "-"))}))
+     :zip nil}))
 
