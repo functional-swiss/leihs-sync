@@ -10,10 +10,21 @@ TMP_DIR="${PROJECT_DIR}/tmp"
 mkdir -p $TMP_DIR
 
 cd $PROJECT_DIR
+./bin/env/java-setup
+./bin/env/clojure-setup
+source $PROJECT_DIR/bin/env/select-tool-versions-manager
+
+function run_clojure {
+  if [[ "$TOOL_VERSIONS_MANAGER" == "mise" ]]; then
+    mise exec -- clojure "$@"
+  else
+    clojure "$@"
+  fi
+}
 
 function build {
   ./bin/version
-  clojure -T:build uber
+  run_clojure -T:build uber
 }
 
 rm -f $PROJECT_DIR/$JAR_NAME

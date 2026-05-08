@@ -5,5 +5,10 @@ PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && p
 cd $PROJECT_DIR
 ./bin/env/java-setup
 ./bin/env/clojure-setup
+source $PROJECT_DIR/bin/env/select-tool-versions-manager
 rm -f resources/version.yml
-rlwrap clj -R:nREPL -m nrepl.cmdline -i "$@"
+if [[ "$TOOL_VERSIONS_MANAGER" == "mise" ]]; then
+	rlwrap mise exec -- clj -R:nREPL -m nrepl.cmdline -i "$@"
+else
+	rlwrap clj -R:nREPL -m nrepl.cmdline -i "$@"
+fi

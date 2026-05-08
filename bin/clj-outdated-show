@@ -4,4 +4,9 @@ PROJECT_DIR="$(cd -- "$(dirname "${BASH_SOURCE}")" ; cd .. > /dev/null 2>&1 && p
 cd $PROJECT_DIR
 ./bin/env/java-setup
 ./bin/env/clojure-setup
-clojure -M:outdated "$@"
+source $PROJECT_DIR/bin/env/select-tool-versions-manager
+if [[ "$TOOL_VERSIONS_MANAGER" == "mise" ]]; then
+	mise exec -- clojure -M:outdated "$@"
+else
+	clojure -M:outdated "$@"
+fi
