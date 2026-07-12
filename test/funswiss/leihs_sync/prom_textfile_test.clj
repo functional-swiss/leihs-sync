@@ -19,3 +19,21 @@
   (let [out (prom/render "x" {:users-created-count 0} 1)]
     (is (not (re-find #"users_deleted" out)))
     (is (re-find #"(?m)^leihs_sync_users_created_count\{job=\"x\"\} 0$" out))))
+
+(deftest render-escapes-label-values
+  (let [out (prom/render "a\\b\"c\nd" {:users-created-count 1} 1)]
+    (is (re-find #"(?m)^leihs_sync_users_created_count\{job=\"a\\\\b\\\"c\\nd\"\} 1$" out))))
+
+(deftest write!-creates-world-readable-file-and-no-tmp-leftovers
+  (let [dir (.toFile (java.nio.file.Files/createTempDirectory
+                      "prom-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        target (java.io.File. dir "leihs-functional-sync-counts.prom")]
+    (prom/write! (.getPath target) "leihs-functional-sync" state)
+    (is (.exists target))
+    (is (re-find #"leihs_sync_users_created_count" (slurp target)))
+    (is (.canRead target)) ; readable
+    (is (= 1 (count (.listFiles dir)))))) ; tmp file cleaned up
+
+(deftest send-success-skips-when-env-unset
+  ;; PROM_TEXTFILE_PATH is not set in the test environment
+  (is (nil? (prom/send-success state))))
