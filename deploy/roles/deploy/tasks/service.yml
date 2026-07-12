@@ -1,3 +1,12 @@
+# group is created by the vm-agent role (leihs-inventory) — deploy that
+# role first on hosts that enable prom_textfile_dir
+- name: add app user to prom-textfile group (textfile-collector write access)
+  user:
+    name: '{{app_user}}'
+    groups: prom-textfile
+    append: yes
+  when: prom_textfile_dir | default('') | length > 0
+
 - name: copy {{app_name}}.service
   template:
     src: 'sync.service'

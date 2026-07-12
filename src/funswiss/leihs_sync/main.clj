@@ -8,6 +8,7 @@
    [clojure.tools.cli :as cli]
    [funswiss.leihs-sync.leihs.core :as leihs-core]
    [funswiss.leihs-sync.ms.core :as ms-core]
+   [funswiss.leihs-sync.prom-textfile :as prom-textfile]
    [funswiss.leihs-sync.sync.core :as sync-core]
    [funswiss.leihs-sync.utils.cli-options :as cli-opts]
    [funswiss.leihs-sync.utils.core :refer [deep-merge-limited keyword presence str get! get-in!]]
@@ -129,7 +130,8 @@
                   (sync-core/start @config*)
                   (when-let [prtg-url (get @config* :prtg-url)]
                     (prtg/send-success prtg-url @sync-core/state*))
-                  (zabbix-sender/send-success @config* @sync-core/state*)))
+                  (zabbix-sender/send-success @config* @sync-core/state*)
+                  (prom-textfile/send-success @sync-core/state*)))
       (catch Throwable th
         (reset! exception* th)
         (logging/error (thrown/stringify th))

@@ -72,6 +72,6 @@
     (let [job (or (presence (System/getenv "PROM_JOB_LABEL"))
                   (-> path File. .getName
                       (string/replace #"-counts\.prom$" "")))]
-      (logging/info "prom-textfile: writing " path)
+      (logging/info "prom-textfile: writing" path)
       (write! path job state))
     (logging/info "prom-textfile: skipped, PROM_TEXTFILE_PATH not set")))
