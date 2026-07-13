@@ -1,7 +1,62 @@
-- name: install opendjk-17-jdk
+- name: Check if openjdk-21-jdk is available
+  shell: apt-cache show openjdk-21-jdk > /dev/null 2>&1
+  register: openjdk21_available
+  changed_when: false
+  failed_when: false
+
+- name: Add Adoptium GPG key and repository (when JDK 21 not natively available)
+  when: openjdk21_available.rc != 0
+  block:
+    - name: Ensure python3-debian is installed
+      apt:
+        pkg: python3-debian
+        state: present
+
+    - name: Add Adoptium apt repository
+      deb822_repository:
+        name: adoptium
+        types: deb
+        uris: https://packages.adoptium.net/artifactory/deb
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: main
+        signed_by: https://packages.adoptium.net/artifactory/api/gpg/key/public
+
+    - name: Update apt cache after adding Adoptium repository
+      apt:
+        update_cache: yes
+
+- name: Install OpenJDK 21
   apt:
-    name: openjdk-17-jdk
+    pkg:
+      - "{{ 'temurin-21-jdk' if openjdk21_available.rc != 0 else 'openjdk-21-jdk' }}"
     state: latest
     update_cache: yes
     cache_valid_time: 3600
 
+- name: Remove Adoptium Temurin packages (leftover from Bookworm)
+  apt:
+    pkg:
+      - temurin-21-jdk
+    state: absent
+  when: openjdk21_available.rc == 0
+
+- name: Remove Adoptium repository (leftover from Bookworm)
+  file:
+    path: /etc/apt/sources.list.d/adoptium.sources
+    state: absent
+  when: openjdk21_available.rc == 0
+
+- name: Determine JDK 21 install path
+  shell: dirname $(dirname $(update-alternatives --list java | grep -E '21' | head -1))
+  register: jdk21_home
+  changed_when: false
+
+- name: Set OpenJDK 21 as default java
+  community.general.alternatives:
+    name: java
+    path: "{{ jdk21_home.stdout }}/bin/java"
+
+- name: Set OpenJDK 21 as default javac
+  community.general.alternatives:
+    name: javac
+    path: "{{ jdk21_home.stdout }}/bin/javac"

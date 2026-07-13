@@ -16,7 +16,7 @@ Group={{app_user}}
 Environment=PROM_TEXTFILE_PATH={{prom_textfile_dir}}/{{app_name}}-counts.prom
 Environment=PROM_JOB_LABEL={{app_name}}
 {% endif %}
-ExecStart=/usr/bin/java "-Xmx1g" "-jar" "{{app_dir}}/leihs-sync.jar" \
+ExecStart=/usr/bin/env java "-Xmx1g" "-jar" "{{app_dir}}/leihs-sync.jar" \
   "-c" "{{config_file_target}}" "run"
 
 [Install]
