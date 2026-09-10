@@ -42,6 +42,7 @@
                                      :users-created-count
                                      :users-deleted-count
                                      :users-disabled-count
+                                     :users-photos-failed
                                      :users-updated-count
                                      :users-total-disabled-count
                                      :users-total-enabled-count])

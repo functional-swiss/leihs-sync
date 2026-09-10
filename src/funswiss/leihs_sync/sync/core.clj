@@ -24,6 +24,10 @@
 (def user-photo-mode-keys [prefix-key user-photo-mode-key])
 (def user-photo-mode-default "lazy")
 
+;; Photos are optional. Transient Graph errors with these HTTP statuses are
+;; tolerated (warn-and-continue) instead of failing the whole sync.
+(def transient-photo-http-statuses #{500 503 504})
+
 (def user-create-defaults-key :user-create-defaults)
 (def user-update-defaults-key :user-update-defaults)
 
@@ -76,6 +80,7 @@
    :users-deleted-count 0
    :users-disabled-count 0
    :users-photos-checked 0
+   :users-photos-failed 0
    :users-photos-updated 0
    :users-updated-count 0})
 
@@ -343,21 +348,37 @@
         (swap! state* update-in [:users-photos-updated] inc)
         leihs-user))))
 
+(defn check-and-update-image-tolerant
+  "Photos are optional: swallow transient Graph 5xx so a single bad photo
+   never fails the whole sync. Non-transient errors still propagate."
+  [{org-id :org_id :as leihs-user}]
+  (try
+    (check-and-update-image leihs-user)
+    (catch ExceptionInfo e
+      (if (contains? transient-photo-http-statuses (some-> e ex-data :status))
+        (do (warn "Photo sync failed for user" org-id
+                  "with transient error; skipping (photos are optional)."
+                  (str (.getMessage e)))
+            (swap! state* update-in [:users-photos-failed] inc)
+            nil)
+        (throw e)))))
+
 (defn update-images []
   (info "START update-images")
   (case (get-in! @config* user-photo-mode-keys)
     "eager" (->> @leihs-users* vals
                  (filter :account_enabled)
-                 (map check-and-update-image)
+                 (map check-and-update-image-tolerant)
                  doall)
     "lazy" (->> @leihs-users* vals
                 (filter :account_enabled)
                 (filter :last_sign_in_at)
-                (map check-and-update-image)
+                (map check-and-update-image-tolerant)
                 doall)
     "none" nil)
   (info "DONE update-images #" (select-keys @state* [:users-photos-checked
-                                                     :users-photos-updated])))
+                                                     :users-photos-updated
+                                                     :users-photos-failed])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
