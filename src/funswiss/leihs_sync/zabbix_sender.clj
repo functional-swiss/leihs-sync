@@ -42,7 +42,10 @@
                                      :users-created-count
                                      :users-deleted-count
                                      :users-disabled-count
-                                     :users-photos-failed
+                                     ;; :users-photos-failed temporarily not
+                                     ;; sent: the zabbix item is not registered
+                                     ;; on the server yet (unsupported item =
+                                     ;; sender error). Re-add once it exists.
                                      :users-updated-count
                                      :users-total-disabled-count
                                      :users-total-enabled-count])
