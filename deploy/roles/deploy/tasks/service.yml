@@ -13,11 +13,11 @@
     dest: /etc/systemd/system/{{app_name}}.service
     mode: 0644
 
-- name: enable {{app_name}}.service
+- name: disable {{app_name}}.service (the timer starts it, not boot)
   service:
     name: '{{app_name}}.service'
     daemon_reload: yes
-    enabled: yes
+    enabled: no
 
 - name: install {{app_name}} timer
   template:

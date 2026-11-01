@@ -19,7 +19,4 @@ Environment=PROM_JOB_LABEL={{app_name}}
 ExecStart=/usr/bin/env java "-Xmx1g" "-jar" "{{app_dir}}/leihs-sync.jar" \
   "-c" "{{config_file_target}}" "run"
 
-[Install]
-WantedBy=multi-user.target
-
 # vi: ft=sh
